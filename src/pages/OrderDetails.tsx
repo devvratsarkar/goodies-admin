@@ -104,6 +104,16 @@ const orderStatusClass = (value?: string | null) => {
   return 'order-status order-status--neutral'
 }
 
+const timelineTone = (value?: string | null) => {
+  const key = statusKey(value)
+  if (['failed', 'cancelled', 'canceled', 'rejected', 'returned', 'tamara_p_canceled', 'tamara_p_failed'].includes(key)) return 'danger'
+  if (['completed', 'delivered', 'paid', 'approved', 'success'].includes(key)) return 'success'
+  if (['pending', 'on_hold', 'unpaid'].includes(key)) return 'warning'
+  if (['processing', 'shipped', 'packed', 'refund_pending', 'refund_initiated', 'initiating_refund'].includes(key)) return 'info'
+  if (key === 'refunded') return 'refunded'
+  return 'neutral'
+}
+
 const paymentStatusClass = (value?: string | null) => {
   const key = statusKey(value)
   if (key === 'paid') return 'order-status order-status--success'
@@ -688,7 +698,7 @@ export function OrderDetails() {
           ) : (
             <div className="order-timeline-list">
               {timeline.map((entry, idx) => (
-                <div key={`${idx}-${String((entry as { status?: string }).status || '')}`} className="order-timeline-item">
+                <div key={`${idx}-${String((entry as { status?: string }).status || '')}`} className={`order-timeline-item order-timeline-item--${timelineTone((entry as { status?: string }).status)}`}>
                   <span className="order-timeline-dot" />
                   <div>
                     <div className="order-timeline-status">{toTitleCase((entry as { status?: string }).status || '-')}</div>

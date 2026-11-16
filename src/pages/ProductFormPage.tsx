@@ -6,7 +6,7 @@ import { getProfileImageUrl } from '../api/client'
 import { ImageSourceField } from '../components/media/ImageSourceField'
 import { categoriesApi, productsApi, sizesApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import type { Category, Product, ProductType, Size } from '../types/api'
 import { FormField } from '../components/ui/FormField'
 import {
@@ -911,7 +911,7 @@ export function ProductFormPage() {
 
   async function handleDelete() {
     if (!canDelete || !isEdit || !id) return
-    if (!(await adminConfirm('Move this product to trash? You can restore it from the Trash filter.'))) return
+    if (!(await confirmDeleteItem(formik.values.title))) return
     setDeleting(true)
     setError('')
     setSuccess('')

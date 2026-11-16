@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { serviceCategoriesApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import type { ServiceCategory } from '../types/api'
 import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
@@ -170,8 +170,8 @@ export function ServiceCategories() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!(await adminConfirm('Are you sure you want to delete this category?'))) return
+  const handleDelete = async (id: string, title?: string) => {
+    if (!(await confirmDeleteItem(title))) return
     try {
       await serviceCategoriesApi.delete(id)
       setSuccess('Deleted')
@@ -196,7 +196,7 @@ export function ServiceCategories() {
           <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(row.original)} title="Edit">
             <Pencil size={16} />
           </button>
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)} title="Delete">
+          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, row.original.title)} title="Delete">
             <Trash2 size={16} />
           </button>
         </div>

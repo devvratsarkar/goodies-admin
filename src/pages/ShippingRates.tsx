@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { shippingRatesApi, shippingZonesApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import type { ShippingRate, ShippingZone } from '../types/api'
 import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
@@ -454,6 +454,11 @@ export function ShippingRates() {
       setSubmitting(false)
       return
     }
+    if (!/\p{L}/u.test(zoneName)) {
+      setModalError('Zone name cannot be only numbers.')
+      setSubmitting(false)
+      return
+    }
     if (!zoneForm.countries.length) {
       setModalError('Add at least one country.')
       setSubmitting(false)
@@ -481,8 +486,19 @@ export function ShippingRates() {
     event.preventDefault()
     setSubmitting(true)
     setModalError('')
-    if (!rateForm.title.trim()) {
+    const rateTitle = rateForm.title.trim()
+    if (!rateTitle) {
       setModalError('Title is required.')
+      setSubmitting(false)
+      return
+    }
+    if (!/^[\p{L}\p{N}\s.'-]+$/u.test(rateTitle)) {
+      setModalError('Title cannot include special characters.')
+      setSubmitting(false)
+      return
+    }
+    if (!/\p{L}/u.test(rateTitle)) {
+      setModalError('Title cannot be only numbers.')
       setSubmitting(false)
       return
     }
@@ -501,7 +517,7 @@ export function ShippingRates() {
       return
     }
     const payload = {
-      title: rateForm.title.trim(),
+      title: rateTitle,
       method: rateForm.method,
       shipping_zone_id: rateForm.shippingZoneId,
       currency: 'AED',
@@ -534,9 +550,9 @@ export function ShippingRates() {
     }
   }
 
-  const handleDeleteZone = async (id: string) => {
+  const handleDeleteZone = async (id: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Are you sure you want to delete this shipping zone?'))) return
+    if (!(await confirmDeleteItem(name))) return
     try {
       await shippingZonesApi.delete(id)
       setSuccess('Shipping zone deleted')
@@ -546,9 +562,9 @@ export function ShippingRates() {
     }
   }
 
-  const handleDeleteRate = async (id: string) => {
+  const handleDeleteRate = async (id: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Are you sure you want to delete this shipping rate?'))) return
+    if (!(await confirmDeleteItem(name))) return
     try {
       await shippingRatesApi.delete(id)
       setSuccess('Shipping rate deleted')
@@ -570,7 +586,7 @@ export function ShippingRates() {
           </button>
           )}
           {canDelete && (
-          <button type="button" className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete" title="Delete zone" aria-label="Delete zone" onClick={() => handleDeleteZone(row.original._id)}>
+          <button type="button" className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete" title="Delete zone" aria-label="Delete zone" onClick={() => handleDeleteZone(row.original._id, row.original.name)}>
             <Trash2 size={16} />
           </button>
           )}
@@ -636,7 +652,7 @@ export function ShippingRates() {
           </button>
           )}
           {canDelete && (
-          <button type="button" className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete" title="Delete rate" aria-label="Delete rate" onClick={() => handleDeleteRate(row.original._id)}>
+          <button type="button" className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete" title="Delete rate" aria-label="Delete rate" onClick={() => handleDeleteRate(row.original._id, row.original.title || zoneOf(row.original)?.name)}>
             <Trash2 size={16} />
           </button>
           )}

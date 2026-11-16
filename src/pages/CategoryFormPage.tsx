@@ -121,6 +121,7 @@ export function CategoryFormPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   useEffect(() => {
     let ignore = false
@@ -257,6 +258,7 @@ export function CategoryFormPage() {
     }
     setSubmitting(true)
     setError('')
+    setSuccess('')
     try {
       if (isEdit && id) await categoriesApi.update(id, payload)
       else await categoriesApi.create(payload)
@@ -267,7 +269,12 @@ export function CategoryFormPage() {
         'category',
         ...(slug ? [{ page: 'category' as const, slug }] : []),
       ])
-      navigate('/categories')
+      if (isEdit) {
+        setSuccess('Category updated')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        navigate('/categories')
+      }
     } catch (err) {
       const apiMessage =
         err && typeof err === 'object' && 'response' in err
@@ -308,6 +315,7 @@ export function CategoryFormPage() {
       </div>
 
       {error && <div className="alert alert-error product-form-error">{error}</div>}
+      {!error && success && <div className="alert alert-success product-form-error" role="status">{success}</div>}
 
       <div className="card product-form">
         <FormSection title="Category details" hint="Name, parent, and how this category appears in the store.">

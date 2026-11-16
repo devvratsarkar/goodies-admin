@@ -7,7 +7,7 @@ import Select from 'react-select'
 import type { StylesConfig } from 'react-select'
 import { codMethodsApi, type CodMethodPayload } from '../../api/endpoints'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
-import { adminConfirm } from '../../utils/adminConfirm'
+import { confirmDeleteItem } from '../../utils/adminConfirm'
 import type { CodMethod } from '../../types/api'
 import { MuiDataTable } from '../../components/ui/MuiDataTable'
 import { FormField } from '../../components/ui/FormField'
@@ -202,9 +202,9 @@ export function CodMethods() {
     setOpen(true)
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Are you sure you want to delete this COD method?'))) return
+    if (!(await confirmDeleteItem(name))) return
     setError('')
     setSuccess('')
     try {
@@ -246,7 +246,7 @@ export function CodMethods() {
             className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete"
             title="Delete COD method"
             aria-label="Delete COD method"
-            onClick={() => handleDelete(row._id)}
+            onClick={() => handleDelete(row._id, row.country)}
           >
             <Trash2 size={16} />
           </button>

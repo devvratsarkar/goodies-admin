@@ -5,7 +5,7 @@ import { Pencil, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import moment from 'moment'
 import { useNavigate } from 'react-router-dom'
 import { brandsApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import { slugify } from '../utils/slugify'
 import type { Brand } from '../types/api'
@@ -153,8 +153,8 @@ export function Brands({ trash = false }: { trash?: boolean }) {
     }
   }, [])
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!(await adminConfirm('Move this brand to trash? You can restore it from Brand trash.'))) return
+  const handleDelete = useCallback(async (id: string, name?: string) => {
+    if (!(await confirmDeleteItem(name))) return
     try {
       await brandsApi.delete(id)
       setSuccess('Brand moved to trash')
@@ -227,7 +227,7 @@ export function Brands({ trash = false }: { trash?: boolean }) {
                 className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete"
                 title="Move to trash"
                 aria-label="Move to trash"
-                onClick={() => handleDelete(row._id)}
+                onClick={() => handleDelete(row._id, row.name)}
               >
                 <Trash2 size={16} />
               </button>

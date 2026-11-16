@@ -6,7 +6,7 @@ import moment from 'moment'
 import { useNavigate } from 'react-router-dom'
 import { blogCategoriesApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import { slugify } from '../utils/slugify'
 import type { BlogCategory } from '../types/api'
@@ -274,8 +274,7 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
 
   const handleDelete = useCallback(async (id: string, slug?: string, name?: string) => {
     if (!canDelete) return
-    const label = name?.trim() || 'blog category'
-    if (!(await adminConfirm(`Are you sure you want to delete this “${label}”?`))) return
+    if (!(await confirmDeleteItem(name))) return
     try {
       await blogCategoriesApi.delete(id)
       await revalidateStore(['articles', ...(slug ? [{ page: 'blog-category' as const, slug }] : [])])

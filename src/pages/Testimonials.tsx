@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { testimonialMastersApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import type { TestimonialMaster } from '../types/api'
 import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
@@ -103,8 +103,8 @@ export function Testimonials() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!(await adminConfirm('Are you sure you want to delete this testimonial?'))) return
+  const handleDelete = async (id: string, name?: string) => {
+    if (!(await confirmDeleteItem(name))) return
     try {
       await testimonialMastersApi.delete(id)
       setSuccess('Deleted')
@@ -149,7 +149,7 @@ export function Testimonials() {
           <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(row.original)} title="Edit">
             <Pencil size={16} />
           </button>
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)} title="Delete">
+          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, row.original.name)} title="Delete">
             <Trash2 size={16} />
           </button>
           {/* <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleRestore(row.original._id)} title="Restore">

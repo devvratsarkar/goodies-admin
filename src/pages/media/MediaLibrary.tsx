@@ -3,7 +3,7 @@ import { AlertCircle, Check, Copy, Grid2x2, LayoutList, Pencil, Plus, Search, Tr
 import { mediaApi } from '../../api/endpoints'
 import { getProfileImageUrl } from '../../api/client'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
-import { adminConfirm } from '../../utils/adminConfirm'
+import { confirmDeleteItem } from '../../utils/adminConfirm'
 import { getApiErrorMessage } from '../../utils/apiError'
 import type { MediaAsset, MediaGalleryPage } from '../../types/api'
 import { AddMedia } from './AddMedia'
@@ -309,7 +309,7 @@ export function MediaLibrary() {
 
   const removeItem = async (item: MediaFile) => {
     if (!canDelete || !item.deletable) return
-    if (!(await adminConfirm(`Delete “${item.name}” from the media library? This cannot be undone.`))) return
+    if (!(await confirmDeleteItem(item.name))) return
     setError('')
     setSuccess('')
     try {

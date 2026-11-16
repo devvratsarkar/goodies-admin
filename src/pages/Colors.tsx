@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { colorsApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import type { Color } from '../types/api'
 import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
@@ -115,8 +115,8 @@ export function Colors() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!(await adminConfirm('Are you sure you want to delete this color?'))) return
+  const handleDelete = async (id: string, name?: string) => {
+    if (!(await confirmDeleteItem(name))) return
     try {
       await colorsApi.delete(id)
       setSuccess('Color deleted')
@@ -165,7 +165,7 @@ export function Colors() {
           <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(row.original)}>
             <Pencil size={16} />
           </button>
-          <button className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)}>
+          <button className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, (row.original.name || '').toUpperCase())}>
             <Trash2 size={16} />
           </button>
         </div>

@@ -5,7 +5,7 @@ import { Pencil, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import moment from 'moment'
 import { useNavigate } from 'react-router-dom'
 import { sizesApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import { slugify } from '../utils/slugify'
 import type { Size } from '../types/api'
@@ -166,9 +166,9 @@ export function Sizes({ trash = false }: { trash?: boolean }) {
     }
   }, [canEdit])
 
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback(async (id: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Move this size to trash? You can restore it from Size trash.'))) return
+    if (!(await confirmDeleteItem(name))) return
     try {
       await sizesApi.delete(id)
       setSuccess('Size moved to trash')
@@ -247,7 +247,7 @@ export function Sizes({ trash = false }: { trash?: boolean }) {
                 className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete"
                 title="Move to trash"
                 aria-label="Move to trash"
-                onClick={() => handleDelete(row._id)}
+                onClick={() => handleDelete(row._id, (row.name || '').toUpperCase())}
               >
                 <Trash2 size={16} />
               </button>
