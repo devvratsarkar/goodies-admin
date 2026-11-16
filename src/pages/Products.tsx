@@ -5,7 +5,7 @@ import moment from 'moment'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import { categoriesApi, productsApi, sizesApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import type { Category, Product, Size } from '../types/api'
 import { MuiDataTable } from '../components/ui/MuiDataTable'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -333,9 +333,9 @@ export function Products({ trash = false }: { trash?: boolean }) {
     }
   }, [page, pageSize, debouncedSearch, visibility, isTrash, status, categoryId, sizeName, productTypeFilter, stockStatus, min, max, priceError, reloadKey])
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, title?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Move this product to trash? You can restore it from the Trash filter.'))) return
+    if (!(await confirmDeleteItem(title))) return
     try {
       await productsApi.delete(id)
       await revalidateStore(['home', 'shop', 'products', 'category'])
@@ -543,7 +543,7 @@ export function Products({ trash = false }: { trash?: boolean }) {
             className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete"
             title="Delete product"
             aria-label="Delete product"
-            onClick={() => handleDelete(row._id)}
+            onClick={() => handleDelete(row._id, row.title)}
           >
             <Trash2 size={16} />
           </button>

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useRbac } from '../context/RbacContext'
 import { FormField } from '../components/ui/FormField'
 import { Modal } from '../components/ui/Modal'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import { passwordRuleError } from '../utils/password'
 import { ACTIONS, MODULES, type Action, type ModuleKey, type Permissions } from '../rbac'
 import type { AccessRole, StaffMember } from '../types/api'
@@ -202,7 +202,7 @@ export function Roles() {
 
   const deleteRole = async () => {
     if (!selected || selected.is_super || selected.is_system) return
-    if (!(await adminConfirm(`Delete the ${selected.name} role?`))) return
+    if (!(await confirmDeleteItem(selected.name))) return
     setError('')
     try {
       await accessApi.deleteRole(selected._id)
@@ -349,7 +349,7 @@ export function Roles() {
   }
 
   const removeUser = async (user: StaffMember) => {
-    if (!(await adminConfirm(`Delete ${user.name || user.email}?`))) return
+    if (!(await confirmDeleteItem(user.name || user.email))) return
     setBusyUserId(user._id)
     setError('')
     try {

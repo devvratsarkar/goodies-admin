@@ -9,7 +9,7 @@ import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
 import { FormField } from '../components/ui/FormField'
 import { ImageSourceField, imageFieldValue } from '../components/media/ImageSourceField'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getCountryNameOptions, matchCountryName } from '../utils/country'
 import { isoDateParam } from '../utils/dateQuery'
 import { useModuleCan } from '../components/rbac/useModuleCan'
@@ -376,9 +376,9 @@ export function Customers() {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Are you sure you want to delete this customer?'))) return
+    if (!(await confirmDeleteItem(name))) return
     try {
       setError('')
       await customersApi.delete(id)
@@ -413,7 +413,7 @@ export function Customers() {
           </button>
           )}
           {canDelete && (
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)}>
+          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, [row.original.name, row.original.last_name].filter(Boolean).join(' ') || row.original.email)}>
             <Trash2 size={16} />
           </button>
           )}

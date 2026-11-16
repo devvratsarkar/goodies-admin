@@ -88,6 +88,7 @@ export function ArticleFormPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [contentEditorKey, setContentEditorKey] = useState(0)
   const [slugTouched, setSlugTouched] = useState(false)
   const savedSlug = useRef('')
@@ -171,6 +172,7 @@ export function ArticleFormPage() {
     e.preventDefault()
     setSubmitting(true)
     setError('')
+    setSuccess('')
     if (!form.category) {
       setError('Category is required.')
       setSubmitting(false)
@@ -224,7 +226,14 @@ export function ArticleFormPage() {
         ...articleSlugs.map((slug) => ({ page: 'article' as const, slug })),
         ...categorySlugs.map((slug) => ({ page: 'blog-category' as const, slug })),
       ])
-      navigate('/articles')
+      if (isEdit) {
+        savedSlug.current = slug
+        savedCategorySlug.current = categorySlug
+        setSuccess('Blog updated')
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        navigate('/articles')
+      }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to save blog'))
     } finally {
@@ -261,6 +270,7 @@ export function ArticleFormPage() {
         <div className="product-form-bar__actions">{saveActions()}</div>
       </div>
       {error && <div className="alert alert-error product-form-error">{error}</div>}
+      {!error && success && <div className="alert alert-success product-form-error" role="status">{success}</div>}
       <div className="card product-form">
           <div className="form-row">
             <FormField label="Title" required>

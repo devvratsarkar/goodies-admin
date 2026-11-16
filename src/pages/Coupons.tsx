@@ -4,7 +4,7 @@ import { Copy, History, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { couponsApi } from '../api/endpoints'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import { isoDateParam } from '../utils/dateQuery'
 import type { Coupon } from '../types/api'
@@ -400,9 +400,9 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, code?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Move this coupon to trash? You can restore it from Coupon trash.'))) return
+    if (!(await confirmDeleteItem(code))) return
     try {
       await couponsApi.delete(id)
       showSuccess('Coupon moved to trash')
@@ -483,7 +483,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
               <History size={16} />
             </button>
             {canDelete && (
-            <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)} title="Move to trash" aria-label="Move coupon to trash">
+            <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, row.original.coupon_code)} title="Move to trash" aria-label="Move coupon to trash">
               <Trash2 size={16} />
             </button>
             )}
@@ -654,8 +654,9 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       return
     }
     if (!canDelete) return
-    const confirmed = await adminConfirm(
-      `Move ${selected.length} coupon${selected.length === 1 ? '' : 's'} to trash? You can restore them from Coupon trash.`,
+    const codes = selected.map((row) => row.coupon_code).filter(Boolean)
+    const confirmed = await confirmDeleteItem(
+      codes.length <= 3 ? codes.join(', ') : `${selected.length} coupons`,
     )
     if (!confirmed) return
     setBulkWorking(true)

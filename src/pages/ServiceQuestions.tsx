@@ -6,7 +6,7 @@ import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
 import { FormField } from '../components/ui/FormField'
 import { questionsApi, serviceCategoriesApi } from '../api/endpoints'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import type { ServiceCategory, ServiceQuestion, ServiceQuestionType } from '../types/api'
 
 const STATUS_OPTIONS = ['ACTIVE', 'INACTIVE'] as const
@@ -263,8 +263,8 @@ export function ServiceQuestions() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!(await adminConfirm('Are you sure you want to delete this question?'))) return
+  const handleDelete = async (id: string, label?: string) => {
+    if (!(await confirmDeleteItem(label))) return
     setError('')
     try {
       await questionsApi.delete(id)
@@ -320,7 +320,7 @@ export function ServiceQuestions() {
           <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(row.original)} title="Edit">
             <Pencil size={16} />
           </button>
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)} title="Delete">
+          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, row.original.label)} title="Delete">
             <Trash2 size={16} />
           </button>
           <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleRestore(row.original)} title="Restore">

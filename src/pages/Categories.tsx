@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { categoriesApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
 import { getProfileImageUrl } from '../api/client'
-import { adminConfirm } from '../utils/adminConfirm'
+import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import type { Category } from '../types/api'
 import { MuiDataTable } from '../components/ui/MuiDataTable'
@@ -165,9 +165,9 @@ export function Categories({ trash = false }: { trash?: boolean }) {
     }
   }, [canEdit])
 
-  const handleDelete = useCallback(async (id: string, slug?: string) => {
+  const handleDelete = useCallback(async (id: string, slug?: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Move this category to trash? You can restore it from Category trash.'))) return
+    if (!(await confirmDeleteItem(name))) return
     try {
       await categoriesApi.delete(id)
       await revalidateStore([
@@ -283,7 +283,7 @@ export function Categories({ trash = false }: { trash?: boolean }) {
                 className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete"
                 title="Move to trash"
                 aria-label="Move to trash"
-                onClick={() => handleDelete(row._id, row.slug)}
+                onClick={() => handleDelete(row._id, row.slug, splitBilingual(row.name).primary)}
               >
                 <Trash2 size={16} />
               </button>

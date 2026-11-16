@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { articlesApi, blogCategoriesApi } from '../api/endpoints'
 import { getProfileImageUrl } from '../api/client'
 import { revalidateStore } from '../api/revalidateStore'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import type { Article, BlogCategory } from '../types/api'
 import { MuiDataTable } from '../components/ui/MuiDataTable'
@@ -160,7 +160,7 @@ export function Articles() {
 
   const handleDelete = useCallback(async (row: Article) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Are you sure you want to delete this blog?'))) return
+    if (!(await confirmDeleteItem(row.title))) return
     try {
       await articlesApi.delete(row._id)
       await revalidateStore([

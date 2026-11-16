@@ -4,6 +4,11 @@ type ConfirmOptions = {
   cancelText?: string
 }
 
+export function confirmDeleteItem(name?: string | null) {
+  const label = name?.trim() || 'item'
+  return adminConfirm(`Are you sure you want to delete this “${label}”?`)
+}
+
 export function adminConfirm(message: string, options: ConfirmOptions = {}): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
 

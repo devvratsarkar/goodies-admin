@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useFormik } from 'formik'
 import { faqsApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
-import { adminConfirm } from '../utils/adminConfirm'
+import { confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import { faqValidationSchema } from '../validation/validation'
 import type { FAQ } from '../types/api'
@@ -92,9 +92,9 @@ export function FAQs() {
   const fieldError = (name: 'question' | 'answer') =>
     formik.submitCount > 0 ? formik.errors[name] || '' : ''
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, question?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Are you sure you want to delete this FAQ?'))) return
+    if (!(await confirmDeleteItem(question))) return
     try {
       await faqsApi.delete(id)
       await revalidateStore(['faqs'])
@@ -117,7 +117,7 @@ export function FAQs() {
           </button>
           )}
           {canDelete && (
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id)} title="Delete">
+          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, row.original.question)} title="Delete">
             <Trash2 size={16} />
           </button>
           )}

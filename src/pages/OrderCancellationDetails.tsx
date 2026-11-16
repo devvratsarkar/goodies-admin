@@ -30,6 +30,16 @@ const money = (currency: string | undefined, amount?: number | null) => {
 
 const statusKey = (status?: string | null) => String(status || '').toLowerCase().replace(/\s+/g, '_')
 
+const timelineTone = (status?: string | null) => {
+  const key = statusKey(status).replace(/-/g, '_')
+  if (['failed', 'cancelled', 'canceled', 'rejected', 'returned'].includes(key)) return 'danger'
+  if (['completed', 'delivered', 'paid', 'approved', 'success'].includes(key)) return 'success'
+  if (['pending', 'refund_pending', 'on_hold'].includes(key)) return 'warning'
+  if (['processing', 'shipped', 'packed', 'refund_initiated', 'initiating_refund'].includes(key)) return 'info'
+  if (key === 'refunded') return 'refunded'
+  return 'neutral'
+}
+
 const statusClass = (status?: string | null) => {
   const key = statusKey(status)
   if (key === 'refunded') return 'order-status order-status--refunded'
@@ -612,7 +622,7 @@ export function OrderCancellationDetails() {
           ) : (
             <div className="order-timeline-list">
               {timeline.map((entry, index) => (
-                <div key={`${entry.at}-${index}`} className="order-timeline-item">
+                <div key={`${entry.at}-${index}`} className={`order-timeline-item order-timeline-item--${timelineTone(entry.status)}`}>
                   <span className="order-timeline-dot" />
                   <div>
                     <div className="order-timeline-status">{toTitleCase(entry.status)}</div>
