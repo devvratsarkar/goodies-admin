@@ -32,7 +32,7 @@ type MediaFile = {
 
 type ViewMode = 'grid' | 'list'
 
-const LIMIT_OPTIONS = [10, 20, 50, 100]
+const LIMIT_OPTIONS = [10, 20, 50]
 const DEFAULT_LIMIT = 20
 
 function todayIso(now = new Date()) {
@@ -152,7 +152,7 @@ function MediaPreview({ url, alt, className, version }: { url: string; alt: stri
   if (!src || failedUrl === url) {
     return <span className={className ? `media-tile__missing ${className}` : 'media-tile__missing'}>No preview</span>
   }
-  return <img className={className} src={src} alt={alt} onError={() => setFailedUrl(url)} />
+  return <img className={className} src={src} alt={alt} decoding="async" loading="lazy" onError={() => setFailedUrl(url)} />
 }
 
 function formatUploadedOn(value?: string) {
