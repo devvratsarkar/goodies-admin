@@ -134,6 +134,7 @@ export const customersApi = {
     email: string
     phone_number?: string
     country?: string
+    postal_code?: string
     password: string
     password_confirmation?: string
     status: boolean
@@ -148,6 +149,7 @@ export const customersApi = {
       email?: string
       phone_number?: string
       country?: string
+      postal_code?: string
       password?: string
       password_confirmation?: string
       status?: boolean
@@ -759,7 +761,14 @@ export const exchangeRatesApi = {
 }
 
 export const reportsApi = {
-  getPaymentReport: (params?: { fromDate?: string; toDate?: string; country?: string | string[] }) => {
+  getPaymentReport: (params?: {
+    fromDate?: string
+    toDate?: string
+    country?: string | string[]
+    search?: string
+    page?: number
+    limit?: number
+  }) => {
     const search = new URLSearchParams()
     if (params?.fromDate) search.set('fromDate', params.fromDate)
     if (params?.toDate) search.set('toDate', params.toDate)
@@ -768,10 +777,13 @@ export const reportsApi = {
       search.set('country', countryValue)
       search.set('country_code', countryValue)
     }
+    if (params?.search) search.set('search', params.search)
+    if (params?.page) search.set('page', String(params.page))
+    if (params?.limit) search.set('limit', String(params.limit))
     const qs = search.toString()
     return api.get<ApiResponse<PaymentReportResponse>>(`/payment-report${qs ? `?${qs}` : ''}`)
   },
-  exportPaymentReport: (params?: { fromDate?: string; toDate?: string; country?: string | string[] }) => {
+  exportPaymentReport: (params?: { fromDate?: string; toDate?: string; country?: string | string[]; search?: string }) => {
     const search = new URLSearchParams()
     if (params?.fromDate) search.set('fromDate', params.fromDate)
     if (params?.toDate) search.set('toDate', params.toDate)
@@ -780,6 +792,7 @@ export const reportsApi = {
       search.set('country', countryValue)
       search.set('country_code', countryValue)
     }
+    if (params?.search) search.set('search', params.search)
     const qs = search.toString()
     return api.get(`/payment-report/export${qs ? `?${qs}` : ''}`, {
       responseType: 'blob',

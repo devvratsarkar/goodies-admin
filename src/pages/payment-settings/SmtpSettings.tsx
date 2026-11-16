@@ -22,8 +22,15 @@ function readSettings(res: { data: unknown }) {
   return body?.data ?? null
 }
 
+const SMTP_PASSWORD_MAX = 128
+const SMTP_PASSWORD_ERROR = `Password must be ${SMTP_PASSWORD_MAX} characters or fewer.`
+
 function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+function passwordLengthError(password: string) {
+  return password.length > SMTP_PASSWORD_MAX ? SMTP_PASSWORD_ERROR : ''
 }
 
 export function SmtpSettings() {
@@ -77,9 +84,16 @@ export function SmtpSettings() {
     const username = form.username.trim()
     const fromName = form.from_name.trim()
     const fromEmail = form.from_email.trim()
-    const password = form.password
+    const passwordField = event.currentTarget.querySelector<HTMLInputElement>('#smtp-password')
+    const password = passwordField?.value ?? form.password
     const port = Number(form.port)
+    const passwordError = passwordLengthError(password)
 
+    if (passwordError) {
+      setError(passwordError)
+      setMessage('')
+      return
+    }
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
       setError('Port must be a number from 1 to 65535.')
       setMessage('')
@@ -212,16 +226,31 @@ export function SmtpSettings() {
             label="Password"
             htmlFor="smtp-password"
             required={form.status && !hasPassword}
-            hint={hasPassword ? 'A password is already saved. Leave this blank to keep it.' : 'Saved only on the server. It is never shown again.'}
+            hint={
+              hasPassword
+                ? `A password is already saved. Leave this blank to keep it. Maximum ${SMTP_PASSWORD_MAX} characters.`
+                : `Saved only on the server. It is never shown again. Maximum ${SMTP_PASSWORD_MAX} characters.`
+            }
+            error={passwordLengthError(form.password)}
           >
             <input
               id="smtp-password"
               className="input"
               type="password"
               autoComplete="new-password"
+              name="password"
               value={form.password}
               disabled={saving}
-              onChange={(event) => setField('password', event.target.value)}
+              onChange={(event) => {
+                const next = event.target.value
+                setField('password', next)
+                if (passwordLengthError(next)) {
+                  setError(SMTP_PASSWORD_ERROR)
+                  setMessage('')
+                } else {
+                  setError((current) => (current === SMTP_PASSWORD_ERROR ? '' : current))
+                }
+              }}
             />
           </FormField>
           <FormField label="From name" htmlFor="smtp-from-name">

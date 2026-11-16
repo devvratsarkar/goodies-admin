@@ -50,6 +50,7 @@ type CustomerForm = {
   email: string
   phone_number: string
   country: string
+  postal_code: string
   password: string
   password_confirmation: string
   status: boolean
@@ -60,6 +61,7 @@ const initialForm: CustomerForm = {
   email: '',
   phone_number: '',
   country: '',
+  postal_code: '',
   password: '',
   password_confirmation: '',
   status: true,
@@ -251,6 +253,7 @@ export function Customers() {
       email: row.email || '',
       phone_number: row.phone_number || '',
       country: matchCountryName(row.country),
+      postal_code: row.postal_code || '',
       password: '',
       password_confirmation: '',
       status: row.status !== 'suspended',
@@ -300,6 +303,7 @@ export function Customers() {
       payload.append('email', form.email.trim())
       payload.append('phone_number', form.phone_number.trim())
       payload.append('country', form.country.trim())
+      payload.append('postal_code', form.postal_code.trim())
       payload.append('password', form.password)
       payload.append('password_confirmation', form.password_confirmation)
       payload.append('status', String(form.status))
@@ -332,6 +336,7 @@ export function Customers() {
       payload.append('email', form.email.trim())
       payload.append('phone_number', form.phone_number.trim())
       payload.append('country', form.country.trim())
+      payload.append('postal_code', form.postal_code.trim())
       payload.append('status', String(form.status))
       if (form.password) {
         payload.append('password', form.password)
@@ -644,6 +649,15 @@ export function Customers() {
                 </select>
               </FormField>
             </div>
+            <FormField label="Postal code">
+              <input
+                className="input"
+                value={form.postal_code}
+                onChange={(e) => setForm((p) => ({ ...p, postal_code: e.target.value }))}
+                placeholder="Postal code"
+                autoComplete="postal-code"
+              />
+            </FormField>
             <ImageSourceField
               label="Profile picture"
               hint={existingProfilePic && !profileFile && !profileUrl ? 'Leave empty to keep the current photo' : 'Optional'}

@@ -4,6 +4,7 @@ import { authApi, globalSettingsApi } from '../api/endpoints'
 import { getProfileImageCandidates, getProfileImageUrl } from '../api/client'
 import { ImageSourceField, imageFieldValue } from '../components/media/ImageSourceField'
 import { User, Save, Key, Eye, EyeOff } from 'lucide-react'
+import { passwordRuleError } from '../utils/password'
 
 const countryOptions = (() => {
   const displayNames = typeof Intl.DisplayNames === 'function'
@@ -154,6 +155,12 @@ export function Profile() {
     e.preventDefault()
     setMessage('')
     setMessageType('success')
+    const ruleError = passwordRuleError(new_password)
+    if (ruleError) {
+      setMessageType('error')
+      setMessage(ruleError)
+      return
+    }
     if (new_password !== confirm_password) {
       setMessageType('error')
       setMessage('Confirm password does not match.')

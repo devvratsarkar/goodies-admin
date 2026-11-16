@@ -6,6 +6,7 @@ import { useRbac } from '../context/RbacContext'
 import { FormField } from '../components/ui/FormField'
 import { Modal } from '../components/ui/Modal'
 import { adminConfirm } from '../utils/adminConfirm'
+import { passwordRuleError } from '../utils/password'
 import { ACTIONS, MODULES, type Action, type ModuleKey, type Permissions } from '../rbac'
 import type { AccessRole, StaffMember } from '../types/api'
 
@@ -27,7 +28,7 @@ function samePermissions(a: Permissions, b: Permissions) {
   })
 }
 
-const PASSWORD_MIN = 8
+const PASSWORD_HINT = 'At least 8 characters, with uppercase, lowercase, a number, and a special character.'
 const ROLE_DESCRIPTION_LIMIT = 100
 
 export function Roles() {
@@ -215,8 +216,9 @@ export function Roles() {
 
   const addUser = async (event: FormEvent) => {
     event.preventDefault()
-    if (password.length < PASSWORD_MIN) {
-      setUserError(`Password must be at least ${PASSWORD_MIN} characters.`)
+    const ruleError = passwordRuleError(password)
+    if (ruleError) {
+      setUserError(ruleError)
       return
     }
     setSavingUser(true)
@@ -301,8 +303,9 @@ export function Roles() {
       setEditUserError('Email is required.')
       return
     }
-    if (editPassword && editPassword.length < PASSWORD_MIN) {
-      setEditUserError(`Password must be at least ${PASSWORD_MIN} characters.`)
+    const ruleError = editPassword ? passwordRuleError(editPassword) : ''
+    if (ruleError) {
+      setEditUserError(ruleError)
       return
     }
     if (!editRoleId) {
@@ -541,7 +544,7 @@ export function Roles() {
                 className="input"
                 type="password"
                 value={password}
-                placeholder={`At least ${PASSWORD_MIN} characters`}
+                placeholder={PASSWORD_HINT}
                 autoComplete="new-password"
                 onChange={(event) => setPassword(event.target.value)}
               />
@@ -648,7 +651,7 @@ export function Roles() {
             <FormField label="Email" htmlFor="staff-email" required>
               <input id="staff-email" className="input" type="email" value={editEmail} onChange={(event) => setEditEmail(event.target.value)} />
             </FormField>
-            <FormField label="Password" htmlFor="staff-password" hint={`Leave blank to keep the current password. At least ${PASSWORD_MIN} characters if you change it.`}>
+            <FormField label="Password" htmlFor="staff-password" hint={`Leave blank to keep the current password. ${PASSWORD_HINT}`}>
               <input
                 id="staff-password"
                 className="input"

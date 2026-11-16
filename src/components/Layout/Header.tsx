@@ -117,6 +117,7 @@ export function Header({
   }, [location.pathname])
 
   const current = breadcrumbs[breadcrumbs.length - 1]
+  const showTitle = current?.label !== 'Edit'
   const trail = breadcrumbs.slice(0, -1)
   return (
     <header className="header">
@@ -139,7 +140,7 @@ export function Header({
               ))}
             </nav>
           )}
-          <span className="header-title">{current?.label ?? 'Dashboard'}</span>
+          {showTitle && <span className="header-title">{current?.label ?? 'Dashboard'}</span>}
         </div>
       </div>
       <div className="header-right">

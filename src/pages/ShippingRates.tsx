@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Pencil, Plus, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { shippingRatesApi, shippingZonesApi } from '../api/endpoints'
 import { adminConfirm } from '../utils/adminConfirm'
 import type { ShippingRate, ShippingZone } from '../types/api'
@@ -80,6 +80,98 @@ const COUNTRY_CODES = [
 
 type CountryOption = { code: string; name: string }
 
+type ContinentGroup = { id: string; name: string; countries: readonly string[] }
+
+/** WooCommerce continent groups, limited to the country codes this screen already saves. */
+const CONTINENTS: ContinentGroup[] = [
+  {
+    id: 'AF',
+    name: 'Africa',
+    countries: [
+      'DZ', 'AO', 'BJ', 'BW', 'BF', 'BI', 'CV', 'CM', 'CF', 'TD', 'KM', 'CG', 'CD', 'CI', 'DJ', 'EG', 'GQ', 'ER', 'SZ', 'ET',
+      'GA', 'GM', 'GH', 'GN', 'GW', 'KE', 'LS', 'LR', 'LY', 'MG', 'MW', 'ML', 'MR', 'MU', 'MA', 'MZ', 'NA', 'NE', 'NG', 'RW',
+      'ST', 'SN', 'SC', 'SL', 'SO', 'ZA', 'SS', 'SD', 'TZ', 'TG', 'TN', 'UG', 'ZM', 'ZW',
+    ],
+  },
+  {
+    id: 'AS',
+    name: 'Asia',
+    countries: [
+      'AF', 'AM', 'AZ', 'BH', 'BD', 'BT', 'BN', 'KH', 'CN', 'GE', 'IN', 'ID', 'IR', 'IQ', 'IL', 'JP', 'JO', 'KZ', 'KP', 'KR',
+      'KW', 'KG', 'LA', 'LB', 'MY', 'MV', 'MN', 'MM', 'NP', 'OM', 'PK', 'PH', 'QA', 'SA', 'SG', 'LK', 'SY', 'TW', 'TJ', 'TH',
+      'TL', 'TM', 'AE', 'UZ', 'VN', 'YE',
+    ],
+  },
+  {
+    id: 'EU',
+    name: 'Europe',
+    countries: [
+      'AL', 'AD', 'AT', 'BY', 'BE', 'BA', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IS', 'IE', 'IT',
+      'LV', 'LI', 'LT', 'LU', 'MT', 'MD', 'MC', 'ME', 'NL', 'MK', 'NO', 'PL', 'PT', 'RO', 'RU', 'SM', 'RS', 'SK', 'SI', 'ES',
+      'SE', 'CH', 'TR', 'UA', 'GB', 'VA',
+    ],
+  },
+  {
+    id: 'NA',
+    name: 'North America',
+    countries: [
+      'AG', 'BS', 'BB', 'BZ', 'CA', 'CR', 'CU', 'DM', 'DO', 'SV', 'GD', 'GT', 'HT', 'HN', 'JM', 'MX', 'NI', 'PA', 'KN', 'LC',
+      'VC', 'TT', 'US',
+    ],
+  },
+  {
+    id: 'OC',
+    name: 'Oceania',
+    countries: ['AU', 'FJ', 'KI', 'MH', 'FM', 'NR', 'NZ', 'PW', 'PG', 'WS', 'SB', 'TO', 'TV', 'VU'],
+  },
+]
+
+type RegionToken = { key: string; label: string; codes: string[] }
+
+function regionTokens(
+  selected: string[],
+  taken: Set<string>,
+  nameOf: (code: string) => string,
+): RegionToken[] {
+  const selectedSet = new Set(selected.map((code) => code.toUpperCase()))
+  const available = (codes: readonly string[]) =>
+    codes.filter((code) => selectedSet.has(code) || !taken.has(code))
+  const allCodes = CONTINENTS.flatMap((continent) => continent.countries)
+  const availableAll = available(allCodes)
+  if (
+    availableAll.length > 0 &&
+    availableAll.every((code) => selectedSet.has(code)) &&
+    [...selectedSet].every((code) => availableAll.includes(code))
+  ) {
+    return [{ key: 'everywhere', label: 'Everywhere', codes: [...selectedSet] }]
+  }
+
+  const tokens: RegionToken[] = []
+  const claimed = new Set<string>()
+  for (const continent of CONTINENTS) {
+    const availableHere = available(continent.countries)
+    const selectedHere = continent.countries.filter((code) => selectedSet.has(code))
+    if (!selectedHere.length) continue
+    if (availableHere.length > 0 && availableHere.every((code) => selectedSet.has(code))) {
+      tokens.push({ key: continent.id, label: continent.name, codes: selectedHere })
+      selectedHere.forEach((code) => claimed.add(code))
+    }
+  }
+  const leftovers = [...selectedSet].filter((code) => !claimed.has(code))
+  leftovers
+    .map((code) => ({ key: code, label: nameOf(code), codes: [code] }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .forEach((token) => tokens.push(token))
+  return tokens
+}
+
+function continentsForCodes(codes: string[]) {
+  const selected = new Set(codes.map((code) => code.toUpperCase()))
+  return new Set(
+    CONTINENTS.filter((continent) => continent.countries.some((code) => selected.has(code))).map((continent) => continent.id),
+  )
+}
+
 function buildCountryOptions(): CountryOption[] {
   const displayNames = typeof Intl.DisplayNames === 'function'
     ? new Intl.DisplayNames(['en'], { type: 'region' })
@@ -123,6 +215,31 @@ function StatusChip({ active }: { active: boolean }) {
   )
 }
 
+function TriCheckbox({
+  checked,
+  indeterminate,
+  disabled,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  indeterminate?: boolean
+  disabled?: boolean
+  onChange: () => void
+  label: string
+}) {
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = Boolean(indeterminate) && !checked
+  }, [indeterminate, checked])
+  return (
+    <label className={`zone-region-check${disabled ? ' is-disabled' : ''}`}>
+      <input ref={ref} type="checkbox" checked={checked} disabled={disabled} onChange={onChange} />
+      <span>{label}</span>
+    </label>
+  )
+}
+
 function priceLabel(rate: ShippingRate): string {
   const currency = rate.currency || 'AED'
   if (rate.method === 'weight') {
@@ -159,7 +276,7 @@ export function ShippingRates() {
   const [zoneForm, setZoneForm] = useState<ZoneForm>(initialZoneForm)
   const [rateForm, setRateForm] = useState<RateForm>(initialRateForm)
   const [countryInput, setCountryInput] = useState('')
-  const [countryOpen, setCountryOpen] = useState(false)
+  const [openContinents, setOpenContinents] = useState<Set<string>>(new Set())
   const [modalError, setModalError] = useState('')
 
   const load = () => {
@@ -184,26 +301,29 @@ export function ShippingRates() {
     setZoneForm(initialZoneForm)
     setRateForm(initialRateForm)
     setCountryInput('')
-    setCountryOpen(false)
+    setOpenContinents(new Set())
     setModalError('')
   }
 
   const openCreateZone = () => {
     setZoneForm(initialZoneForm)
     setCountryInput('')
+    setOpenContinents(new Set())
     setModalError('')
     setEditingId(null)
     setModal('zone')
   }
 
   const openEditZone = (row: ShippingZone) => {
+    const countries = Array.isArray(row.country) ? row.country.map((code) => String(code).toUpperCase()) : []
     setEditingId(row._id)
     setZoneForm({
       name: row.name || '',
-      countries: Array.isArray(row.country) ? row.country.map((code) => String(code).toUpperCase()) : [],
+      countries,
       status: Boolean(row.status),
     })
     setCountryInput('')
+    setOpenContinents(continentsForCodes(countries))
     setModalError('')
     setModal('zone')
   }
@@ -240,30 +360,84 @@ export function ShippingRates() {
     setModal('rate')
   }
 
-  const filteredCountryOptions = useMemo(() => {
-    const needle = countryInput.trim().toLowerCase()
-    const selected = new Set(zoneForm.countries)
-    return countryOptions.filter((country) => {
-      if (selected.has(country.code)) return false
-      if (!needle) return true
-      return country.name.toLowerCase().includes(needle) || country.code.toLowerCase().includes(needle)
+  const takenCountryCodes = useMemo(() => {
+    const taken = new Set<string>()
+    zones.forEach((zone) => {
+      if (editingId && zone._id === editingId) return
+      const codes = Array.isArray(zone.country) ? zone.country : []
+      codes.forEach((code) => taken.add(String(code).toUpperCase()))
     })
-  }, [countryInput, countryOptions, zoneForm.countries])
+    return taken
+  }, [zones, editingId])
 
-  const addCountry = (country: CountryOption) => {
-    setZoneForm((prev) => ({
-      ...prev,
-      countries: prev.countries.includes(country.code) ? prev.countries : [...prev.countries, country.code],
-      name: prev.name.trim() ? prev.name : country.name,
-    }))
-    setCountryInput('')
-    setCountryOpen(false)
+  const toggleCountryCodes = (codes: string[], suggestedName?: string) => {
+    setZoneForm((prev) => {
+      const current = prev.countries.map((code) => code.toUpperCase())
+      const currentSet = new Set(current)
+      const actionable = codes
+        .map((code) => code.toUpperCase())
+        .filter((code) => currentSet.has(code) || !takenCountryCodes.has(code))
+      if (!actionable.length) return prev
+      const allOn = actionable.every((code) => currentSet.has(code))
+      const nextSet = new Set(currentSet)
+      if (allOn) actionable.forEach((code) => nextSet.delete(code))
+      else actionable.forEach((code) => nextSet.add(code))
+
+      const next: string[] = []
+      current.forEach((code) => {
+        if (nextSet.has(code)) {
+          next.push(code)
+          nextSet.delete(code)
+        }
+      })
+      CONTINENTS.forEach((continent) => {
+        continent.countries.forEach((code) => {
+          if (nextSet.has(code)) {
+            next.push(code)
+            nextSet.delete(code)
+          }
+        })
+      })
+      nextSet.forEach((code) => next.push(code))
+
+      return {
+        ...prev,
+        countries: next,
+        name: prev.name.trim() ? prev.name : (!allOn && suggestedName ? suggestedName : prev.name),
+      }
+    })
     if (modalError) setModalError('')
   }
 
-  const removeCountry = (code: string) => {
-    setZoneForm((prev) => ({ ...prev, countries: prev.countries.filter((item) => item !== code) }))
+  const removeCountryCodes = (codes: string[]) => {
+    const drop = new Set(codes.map((code) => code.toUpperCase()))
+    setZoneForm((prev) => ({
+      ...prev,
+      countries: prev.countries.filter((code) => !drop.has(code.toUpperCase())),
+    }))
   }
+
+  const countryFilter = countryInput.trim().toLowerCase()
+  const selectedCountrySet = useMemo(
+    () => new Set(zoneForm.countries.map((code) => code.toUpperCase())),
+    [zoneForm.countries],
+  )
+  const regionChips = useMemo(
+    () => regionTokens(zoneForm.countries, takenCountryCodes, (code) => countryNameMap.get(code) || code),
+    [zoneForm.countries, takenCountryCodes, countryNameMap],
+  )
+  const knownCountryCodes = useMemo(
+    () => CONTINENTS.flatMap((continent) => [...continent.countries]),
+    [],
+  )
+  const selectableCountryCodes = useMemo(
+    () => knownCountryCodes.filter((code) => selectedCountrySet.has(code) || !takenCountryCodes.has(code)),
+    [knownCountryCodes, selectedCountrySet, takenCountryCodes],
+  )
+  const everywhereChecked = selectableCountryCodes.length > 0
+    && selectableCountryCodes.every((code) => selectedCountrySet.has(code))
+    && zoneForm.countries.every((code) => selectableCountryCodes.includes(code.toUpperCase()))
+  const everywhereIndeterminate = zoneForm.countries.length > 0 && !everywhereChecked
 
   const handleZoneSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -404,12 +578,12 @@ export function ShippingRates() {
       ),
     },
     {
-      header: 'Name',
+      header: 'Zone Name',
       accessorKey: 'name',
       cell: ({ getValue }) => <span className="shipping-name">{String(getValue() || '—')}</span>,
     },
     {
-      header: 'Countries',
+      header: 'Regions',
       id: 'country',
       cell: ({ row }) => {
         const codes = Array.isArray(row.original.country) ? row.original.country : []
@@ -421,6 +595,28 @@ export function ShippingRates() {
         )
       },
     },
+    {
+      header: 'Shipping Method',
+      id: 'shippingMethod',
+      cell: ({ row }) => {
+        const methods = [
+          ...new Set(
+            rates
+              .filter((rate) => zoneIdOf(rate) === row.original._id)
+              .map((rate) => (rate.method === 'weight' ? 'Weight' : 'Flat')),
+          ),
+        ]
+        if (!methods.length) return '—'
+        return (
+          <span className="shipping-methods-cell">
+            {methods.map((method) => (
+              <span key={method} className="shipping-method">{method}</span>
+            ))}
+          </span>
+        )
+      },
+    },
+
     {
       header: 'Status',
       accessorKey: 'status',
@@ -448,7 +644,7 @@ export function ShippingRates() {
       ),
     },
     {
-      header: 'Zone',
+      header: 'Zone Name',
       id: 'zone',
       cell: ({ row }) => zoneOf(row.original)?.name || '—',
     },
@@ -539,48 +735,114 @@ export function ShippingRates() {
               />
             </FormField>
             <FormField label="Countries" required hint="A country can belong to only one zone.">
-              <div className="shipping-country-picks">
-                {zoneForm.countries.map((code) => (
-                  <span key={code} className="shipping-country-pick">
-                    {countryNameMap.get(code) || code}
-                    <button type="button" onClick={() => removeCountry(code)} aria-label={`Remove ${countryNameMap.get(code) || code}`}>
-                      <X size={12} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="shipping-country-search">
-                <input
-                  type="text"
-                  className="input"
-                  value={countryInput}
-                  onFocus={() => setCountryOpen(true)}
-                  onChange={(e) => {
-                    setCountryInput(e.target.value)
-                    setCountryOpen(true)
-                  }}
-                  onBlur={() => setTimeout(() => setCountryOpen(false), 120)}
-                  placeholder="Type to search country"
-                />
-                {countryOpen && (
-                  <div className="shipping-country-menu">
-                    {filteredCountryOptions.length === 0 ? (
-                      <div className="shipping-country-empty">No countries found</div>
-                    ) : (
-                      filteredCountryOptions.map((country) => (
-                        <button
-                          key={country.code}
-                          type="button"
-                          className="shipping-country-option"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => addCountry(country)}
-                        >
-                          {country.name} ({country.code})
-                        </button>
-                      ))
-                    )}
-                  </div>
-                )}
+              <div className="zone-region-picker">
+                <div className="zone-region-picker__field">
+                  {regionChips.map((token) => (
+                    <span key={token.key} className="zone-region-picker__chip">
+                      {token.label}
+                      <button type="button" onClick={() => removeCountryCodes(token.codes)} aria-label={`Remove ${token.label}`}>
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    className="zone-region-picker__input"
+                    value={countryInput}
+                    onChange={(e) => setCountryInput(e.target.value)}
+                    placeholder={regionChips.length ? '' : 'Start typing to filter zones'}
+                    aria-label="Filter zones"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.preventDefault()
+                    }}
+                  />
+                </div>
+                <div className="zone-region-picker__tree">
+                  {(!countryFilter || 'everywhere'.includes(countryFilter)) && (
+                    <div className="zone-region-row">
+                      <span className="zone-region-row__chevron zone-region-row__chevron--spacer" aria-hidden="true" />
+                      <TriCheckbox
+                        checked={everywhereChecked}
+                        indeterminate={everywhereIndeterminate}
+                        disabled={selectableCountryCodes.length === 0}
+                        onChange={() => toggleCountryCodes(selectableCountryCodes, 'Everywhere')}
+                        label="Everywhere"
+                      />
+                    </div>
+                  )}
+                  {CONTINENTS.map((continent) => {
+                    const continentMatch = !countryFilter || continent.name.toLowerCase().includes(countryFilter)
+                    const countries = continent.countries
+                      .map((code) => ({
+                        code,
+                        name: countryNameMap.get(code) || code,
+                        taken: takenCountryCodes.has(code) && !selectedCountrySet.has(code),
+                      }))
+                      .filter((country) => {
+                        if (continentMatch) return true
+                        return country.name.toLowerCase().includes(countryFilter) || country.code.toLowerCase().includes(countryFilter)
+                      })
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                    if (countryFilter && !countries.length) return null
+                    const selectable = continent.countries.filter((code) => selectedCountrySet.has(code) || !takenCountryCodes.has(code))
+                    const selectedHere = continent.countries.filter((code) => selectedCountrySet.has(code))
+                    const checked = selectable.length > 0 && selectable.every((code) => selectedCountrySet.has(code))
+                    const open = countryFilter ? countries.length > 0 : openContinents.has(continent.id)
+                    return (
+                      <div key={continent.id}>
+                        <div className="zone-region-row">
+                          <button
+                            type="button"
+                            className="zone-region-row__chevron"
+                            aria-expanded={open}
+                            aria-label={`${open ? 'Collapse' : 'Expand'} ${continent.name}`}
+                            onClick={() => {
+                              setOpenContinents((prev) => {
+                                const next = new Set(prev)
+                                if (next.has(continent.id)) next.delete(continent.id)
+                                else next.add(continent.id)
+                                return next
+                              })
+                            }}
+                          >
+                            {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          <TriCheckbox
+                            checked={checked}
+                            indeterminate={selectedHere.length > 0 && !checked}
+                            disabled={selectable.length === 0}
+                            onChange={() => toggleCountryCodes(selectable, continent.name)}
+                            label={continent.name}
+                          />
+                        </div>
+                        {open && countries.map((country) => (
+                          <div
+                            key={country.code}
+                            className={`zone-region-row zone-region-row--child${country.taken ? ' is-disabled' : ''}`}
+                            title={country.taken ? 'Already used in another zone' : undefined}
+                          >
+                            <TriCheckbox
+                              checked={selectedCountrySet.has(country.code)}
+                              disabled={country.taken}
+                              onChange={() => toggleCountryCodes([country.code], country.name)}
+                              label={country.name}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })}
+                  {countryFilter && !'everywhere'.includes(countryFilter) && CONTINENTS.every((continent) => {
+                    const continentMatch = continent.name.toLowerCase().includes(countryFilter)
+                    if (continentMatch) return false
+                    return !continent.countries.some((code) => {
+                      const name = countryNameMap.get(code) || code
+                      return name.toLowerCase().includes(countryFilter) || code.toLowerCase().includes(countryFilter)
+                    })
+                  }) && (
+                    <div className="zone-region-picker__empty">No countries found</div>
+                  )}
+                </div>
               </div>
             </FormField>
             <label className="form-check">

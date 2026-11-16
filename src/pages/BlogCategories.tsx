@@ -272,9 +272,10 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
     }
   }
 
-  const handleDelete = useCallback(async (id: string, slug?: string) => {
+  const handleDelete = useCallback(async (id: string, slug?: string, name?: string) => {
     if (!canDelete) return
-    if (!(await adminConfirm('Move this blog category to trash? You can restore it from Blog category trash.'))) return
+    const label = name?.trim() || 'blog category'
+    if (!(await adminConfirm(`Are you sure you want to delete this “${label}”?`))) return
     try {
       await blogCategoriesApi.delete(id)
       await revalidateStore(['articles', ...(slug ? [{ page: 'blog-category' as const, slug }] : [])])
@@ -374,7 +375,7 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
                 className="btn btn-ghost btn-sm btn-icon action-icon action-icon--delete"
                 title="Move to trash"
                 aria-label="Move to trash"
-                onClick={() => handleDelete(row._id, row.slug)}
+                onClick={() => handleDelete(row._id, row.slug, row.name)}
               >
                 <Trash2 size={16} />
               </button>

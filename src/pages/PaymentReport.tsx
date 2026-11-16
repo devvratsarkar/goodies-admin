@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Check, Copy, FileSpreadsheet } from 'lucide-react'
+import { Check, Copy, FileDown } from 'lucide-react'
 import Select from 'react-select'
 import { reportsApi } from '../api/endpoints'
 import type { PaymentReportItem } from '../types/api'
@@ -9,17 +9,25 @@ import { DataTable } from '../components/ui/DataTable'
 import { countrySelectStyles } from '../utils/countrySelectStyles'
 import { isoDateParam } from '../utils/dateQuery'
 import { useModuleCan } from '../components/rbac/useModuleCan'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 
-function normalizePayload(payload: unknown): { totalRevenue: number; payments: PaymentReportItem[] } {
-  if (!payload || typeof payload !== 'object') return { totalRevenue: 0, payments: [] }
+function normalizePayload(payload: unknown): {
+  totalRevenue: number
+  payments: PaymentReportItem[]
+  totalItems: number
+} {
+  if (!payload || typeof payload !== 'object') return { totalRevenue: 0, payments: [], totalItems: 0 }
   const root = payload as { data?: unknown }
   const data = (root.data && typeof root.data === 'object' ? root.data : root) as {
     totalRevenue?: number
     payments?: unknown
+    pagination?: { totalItems?: number }
   }
+  const payments = Array.isArray(data.payments) ? (data.payments as PaymentReportItem[]) : []
   return {
     totalRevenue: Number(data.totalRevenue ?? 0),
-    payments: Array.isArray(data.payments) ? (data.payments as PaymentReportItem[]) : [],
+    payments,
+    totalItems: Number(data.pagination?.totalItems ?? payments.length),
   }
 }
 
@@ -80,16 +88,6 @@ const getPaymentCountryLabel = (row: PaymentReportItem): string => {
   return COUNTRY_OPTIONS.find((c) => c.code === code)?.label || row.country || '-'
 }
 
-function filterPaymentsByCountry(payments: PaymentReportItem[], countries: string[]) {
-  if (!countries.length) return payments
-  const selected = new Set(countries.map((code) => code.toUpperCase()))
-  return payments.filter((row) => selected.has(getPaymentCountryCode(row)))
-}
-
-function sumPaymentRevenue(payments: PaymentReportItem[]) {
-  return payments.reduce((sum, row) => sum + Number(row.amount ?? 0), 0)
-}
-
 const formatAed = (value?: number | null) =>
   `AED ${Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
@@ -128,47 +126,70 @@ export function PaymentReport() {
   const [fromDate, setFromDate] = useState(() => isoDateParam(searchParams.get('fromDate')))
   const [toDate, setToDate] = useState(() => isoDateParam(searchParams.get('toDate')))
   const [countries, setCountries] = useState<string[]>([])
+  const [applied, setApplied] = useState(() => ({
+    fromDate: isoDateParam(searchParams.get('fromDate')),
+    toDate: isoDateParam(searchParams.get('toDate')),
+    countries: [] as string[],
+  }))
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
+  const [pageIndex, setPageIndex] = useState(0)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalItems, setTotalItems] = useState(0)
   const [rows, setRows] = useState<PaymentReportItem[]>([])
   const [totalRevenue, setTotalRevenue] = useState(0)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
 
-  const load = () => {
+  useEffect(() => {
+    let cancelled = false
     setLoading(true)
     setError('')
-    const countryParam = countries.length ? countries : undefined
     reportsApi
-      .getPaymentReport({ fromDate, toDate, country: countryParam })
-      .then((res) => {
-        const parsed = normalizePayload(res.data)
-        const filteredPayments = filterPaymentsByCountry(parsed.payments, countries)
-        setRows(filteredPayments)
-        setTotalRevenue(
-          countries.length ? sumPaymentRevenue(filteredPayments) : parsed.totalRevenue,
-        )
+      .getPaymentReport({
+        fromDate: applied.fromDate,
+        toDate: applied.toDate,
+        country: applied.countries.length ? applied.countries : undefined,
+        search: debouncedSearch || undefined,
+        page: pageIndex + 1,
+        limit: pageSize,
       })
-      .catch(() => setError('Failed to load payment report'))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      .then((res) => {
+        if (cancelled) return
+        const parsed = normalizePayload(res.data)
+        setRows(parsed.payments)
+        setTotalRevenue(parsed.totalRevenue)
+        setTotalItems(parsed.totalItems)
+      })
+      .catch(() => {
+        if (!cancelled) setError('Failed to load payment report')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [applied, debouncedSearch, pageIndex, pageSize])
 
   const exportExcel = async () => {
     if (!canExport) return
     try {
       setExporting(true)
-      const res = await reportsApi.exportPaymentReport({ fromDate, toDate, country: countries.length ? countries : undefined })
+      const res = await reportsApi.exportPaymentReport({
+        fromDate: applied.fromDate,
+        toDate: applied.toDate,
+        country: applied.countries.length ? applied.countries : undefined,
+        search: debouncedSearch || undefined,
+      })
       const blob = new Blob([res.data], {
         type: res.headers['content-type'] || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `payment-report-${fromDate || 'all'}-to-${toDate || 'all'}.xlsx`
+      a.download = `payment-report-${applied.fromDate || 'all'}-to-${applied.toDate || 'all'}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -201,15 +222,20 @@ export function PaymentReport() {
     { header: 'Date', accessorKey: 'date', cell: ({ getValue }) => (getValue() as string) || '-' },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && !rows.length && !error) return <div className="page-loading">Loading...</div>
 
   return (
     <>
       <div className="page-header">
-        <div>
+        <div className="page-header__intro">
           <h1 className="page-title">Payment Report</h1>
           <p className="page-subtitle">Collected order revenue, same total as the dashboard for the same dates. Amounts are in AED.</p>
         </div>
+        {canExport && (
+          <button type="button" className="btn" onClick={exportExcel} disabled={exporting}>
+            <FileDown size={18} /> {exporting ? 'Exporting...' : 'Export Excel'}
+          </button>
+        )}
       </div>
 
       <div className="card payment-filter-card">
@@ -239,17 +265,18 @@ export function PaymentReport() {
               styles={countrySelectStyles}
             />
           </div>
-          <div className="payment-filter-actions">
-            <button type="button" className="btn btn-primary" onClick={load}>
-              Apply Filter
-            </button>
-            {canExport && (
-            <button type="button" className="btn btn-primary" onClick={exportExcel} disabled={exporting}>
-              <FileSpreadsheet size={16} />
-              {exporting ? 'Exporting...' : 'Export Excel'}
-            </button>
-            )}
-          </div>
+        </div>
+        <div className="payment-filter-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              setPageIndex(0)
+              setApplied({ fromDate, toDate, countries: [...countries] })
+            }}
+          >
+            Apply Filter
+          </button>
         </div>
         </div>
       </div>
@@ -261,7 +288,27 @@ export function PaymentReport() {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      <DataTable data={rows} columns={columns} searchPlaceholder="Search name, email, transaction, or item..." />
+      <DataTable
+        data={rows}
+        columns={columns}
+        searchPlaceholder="Search name, email, transaction, or item..."
+        serverSearch={{
+          value: search,
+          onChange: (value) => {
+            setSearch(value)
+            setPageIndex(0)
+          },
+        }}
+        serverPagination={{
+          pageIndex,
+          pageSize,
+          totalCount: totalItems,
+          onPageChange: (nextPage, nextSize) => {
+            setPageSize(nextSize)
+            setPageIndex(nextSize === pageSize ? nextPage : 0)
+          },
+        }}
+      />
     </>
   )
 }

@@ -609,6 +609,12 @@ export interface PaymentReportItem {
 export interface PaymentReportResponse {
   totalRevenue?: number
   payments?: PaymentReportItem[]
+  pagination?: {
+    totalItems: number
+    totalPages: number
+    currentPage: number
+    itemsPerPage: number
+  }
 }
 
 export interface DashboardCountryCount {
