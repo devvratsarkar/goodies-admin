@@ -440,9 +440,11 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
         flex: 1,
         minWidth: 140,
         renderCell: ({ row }) => (
-          <span className="product-cell__meta" title={row.slug || undefined} style={{ display: 'block', width: '100%', minWidth: 0 }}>
-            {row.slug || '—'}
-          </span>
+          <div className="product-cell" title={row.slug || undefined}>
+            <div className="product-cell__text">
+              <span className="product-cell__title" style={{ fontWeight: 500 }}>{row.slug || '—'}</span>
+            </div>
+          </div>
         ),
       },
       {
