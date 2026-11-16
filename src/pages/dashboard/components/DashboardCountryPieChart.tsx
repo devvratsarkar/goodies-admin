@@ -135,8 +135,20 @@ export function DashboardCountryPieChart({
       ref={rootRef}
       className="dashboard-country-pie-root"
       style={{ width: '100%', height: '100%', minWidth: 0, minHeight: 0 }}
+      onMouseDown={(event) => {
+        const target = event.target
+        if (!(target instanceof Element)) return
+        if (target.closest('.recharts-pie, .recharts-pie-sector, .recharts-surface')) {
+          event.preventDefault()
+        }
+      }}
     >
-      <PieChart width={w} height={h} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+      <PieChart
+        width={w}
+        height={h}
+        margin={{ top: 4, right: 4, bottom: 4, left: 4 }}
+        accessibilityLayer={false}
+      >
         <Pie
           data={data}
           dataKey={dataKey}
@@ -146,6 +158,7 @@ export function DashboardCountryPieChart({
           outerRadius={outerRadius}
           paddingAngle={0}
           stroke="none"
+          rootTabIndex={-1}
           isAnimationActive={w > 80}
         >
           {data.map((_, index) => (

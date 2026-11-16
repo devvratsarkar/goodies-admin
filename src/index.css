@@ -3508,6 +3508,17 @@ html.dark .bundle-builder__tab.is-active .bundle-builder__tab-count.is-warning {
   color: var(--accent);
 }
 
+html.dark .MuiDataGrid-root .MuiDataGrid-columnHeader .MuiDataGrid-sortButton {
+  background-color: transparent;
+  color: var(--text-muted);
+}
+
+html.dark .MuiDataGrid-root .MuiDataGrid-columnHeader .MuiDataGrid-sortButton:hover,
+html.dark .MuiDataGrid-root .MuiDataGrid-columnHeader .MuiDataGrid-sortButton:focus-visible {
+  background-color: var(--bg-hover);
+  color: var(--text);
+}
+
 .mui-table--compact.MuiDataGrid-root .MuiDataGrid-cell {
   padding-top: 4px;
   padding-bottom: 4px;
@@ -6290,6 +6301,18 @@ html:not(.dark) .dashboard-chart-card:hover {
   overflow: visible;
 }
 
+.dashboard-chart-content .recharts-surface,
+.dashboard-chart-content .recharts-surface:focus,
+.dashboard-chart-content .recharts-surface:focus-visible,
+.dashboard-chart-content .recharts-bar-rectangle,
+.dashboard-chart-content .recharts-bar-rectangle:focus,
+.dashboard-chart-content .recharts-bar-rectangle:focus-visible,
+.dashboard-chart-content .recharts-rectangle,
+.dashboard-chart-content .recharts-rectangle:focus,
+.dashboard-chart-content .recharts-rectangle:focus-visible {
+  outline: none;
+}
+
 .dashboard-chart-content .recharts-tooltip-wrapper {
   z-index: 30;
   pointer-events: none;
@@ -6307,6 +6330,22 @@ html:not(.dark) .dashboard-chart-card:hover {
   height: 100%;
   min-width: 0;
   min-height: 0;
+}
+
+/* Clicking a slice focuses the SVG sector (tabIndex -1) and browsers draw a box around its bounds. */
+.dashboard-country-pie-root .recharts-surface,
+.dashboard-country-pie-root .recharts-pie,
+.dashboard-country-pie-root .recharts-pie-sector,
+.dashboard-country-pie-root .recharts-sector,
+.dashboard-country-pie-root .recharts-surface:focus,
+.dashboard-country-pie-root .recharts-surface:focus-visible,
+.dashboard-country-pie-root .recharts-pie:focus,
+.dashboard-country-pie-root .recharts-pie:focus-visible,
+.dashboard-country-pie-root .recharts-pie-sector:focus,
+.dashboard-country-pie-root .recharts-pie-sector:focus-visible,
+.dashboard-country-pie-root .recharts-sector:focus,
+.dashboard-country-pie-root .recharts-sector:focus-visible {
+  outline: none;
 }
 
 .dashboard-chart-skeleton {

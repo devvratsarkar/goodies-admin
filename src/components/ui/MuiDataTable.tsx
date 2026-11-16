@@ -120,6 +120,14 @@ export function MuiDataTable({
         '& .MuiDataGrid-columnHeaders, & .MuiDataGrid-columnHeader': {
           backgroundColor: 'var(--bg-elevated)',
         },
+        '& .MuiDataGrid-columnHeader .MuiDataGrid-sortButton': {
+          backgroundColor: 'transparent',
+          color: 'var(--text-muted)',
+        },
+        '& .MuiDataGrid-columnHeader .MuiDataGrid-sortButton:hover, & .MuiDataGrid-columnHeader .MuiDataGrid-sortButton:focus-visible': {
+          backgroundColor: 'var(--bg-hover)',
+          color: 'var(--text)',
+        },
         '& .MuiDataGrid-columnHeaderTitle': {
           fontWeight: 600,
           fontSize: '0.8rem',

@@ -51,7 +51,17 @@ export function ChartCard({
         ) : isEmpty ? (
           <EmptyState />
         ) : (
-          <div className="dashboard-chart-content">{children}</div>
+          <div
+            className="dashboard-chart-content"
+            onMouseDown={(event) => {
+              const target = event.target
+              if (target instanceof Element && target.closest('.recharts-surface')) {
+                event.preventDefault()
+              }
+            }}
+          >
+            {children}
+          </div>
         )}
       </div>
     </div>

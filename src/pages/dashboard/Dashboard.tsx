@@ -405,7 +405,7 @@ export function Dashboard() {
           actions={<span className="dashboard-chart-hint">{groupingHint}</span>}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={ordersData} margin={chartMargin}>
+            <LineChart data={ordersData} margin={chartMargin} accessibilityLayer={false}>
               <CartesianGrid {...GRID_STYLE} />
               <XAxis dataKey="period" {...xAxis} />
               <YAxis {...CHART_Y_AXIS} allowDecimals={false} />
@@ -434,7 +434,7 @@ export function Dashboard() {
           actions={<span className="dashboard-chart-hint">{groupingHint}</span>}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={revenueBars} margin={chartMargin}>
+            <BarChart data={revenueBars} margin={chartMargin} accessibilityLayer={false}>
               <CartesianGrid {...GRID_STYLE} />
               <XAxis dataKey="period" {...xAxis} />
               <YAxis {...CHART_Y_AXIS_CURRENCY} tickFormatter={(value) => toCompactAed(Number(value))} />
@@ -459,7 +459,7 @@ export function Dashboard() {
           actions={<span className="dashboard-chart-note">{thisMonth.label}</span>}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={thisMonth.points} margin={CHART_MARGIN_MONTH}>
+            <BarChart data={thisMonth.points} margin={CHART_MARGIN_MONTH} accessibilityLayer={false}>
               <CartesianGrid {...GRID_STYLE} />
               <XAxis
                 dataKey="day"
@@ -483,7 +483,7 @@ export function Dashboard() {
           isEmpty={!hasSeries(memberBars)}
         >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={memberBars} margin={chartMargin}>
+            <BarChart data={memberBars} margin={chartMargin} accessibilityLayer={false}>
               <CartesianGrid {...GRID_STYLE} />
               <XAxis dataKey="period" {...xAxis} />
               <YAxis {...CHART_Y_AXIS} allowDecimals={false} />
