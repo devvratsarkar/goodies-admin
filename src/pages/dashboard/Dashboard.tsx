@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Bar,
   BarChart,
@@ -37,6 +38,7 @@ import {
   dashboardTooltipProps,
 } from './components/chartConfig'
 import { dashboardApi } from '../../api/endpoints'
+import { isoDateParam } from '../../utils/dateQuery'
 import type { DashboardData, DashboardMonthPoint } from '../../types/api'
 import { ChartCard } from './components/ChartCard'
 import { CustomersWorldMap } from './components/CustomersWorldMap'
@@ -108,14 +110,36 @@ const EMPTY_TOTALS = {
   enquiries: 0,
 }
 
+function groupParam(value: string | null): TimeMode {
+  return value === 'yearly' ? 'yearly' : 'monthly'
+}
+
 export function Dashboard() {
-  const [fromDate, setFromDate] = useState('')
-  const [toDate, setToDate] = useState('')
-  const [timeMode, setTimeMode] = useState<TimeMode>('monthly')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const fromDate = isoDateParam(searchParams.get('fromDate'))
+  const toDate = isoDateParam(searchParams.get('toDate'))
+  const timeMode = groupParam(searchParams.get('group'))
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const today = todayIso()
+
+  const updateFilters = (next: { fromDate?: string; toDate?: string; timeMode?: TimeMode }) => {
+    setSearchParams((current) => {
+      const params = new URLSearchParams(current)
+      const from = next.fromDate ?? isoDateParam(current.get('fromDate'))
+      const to = next.toDate ?? isoDateParam(current.get('toDate'))
+      const mode = next.timeMode ?? groupParam(current.get('group'))
+      if (from) params.set('fromDate', from)
+      else params.delete('fromDate')
+      if (to) params.set('toDate', to)
+      else params.delete('toDate')
+      if (mode === 'yearly') params.set('group', 'yearly')
+      else params.delete('group')
+      return params
+    }, { replace: true })
+  }
+
   const bothDatesSelected = Boolean(fromDate && toDate)
   const dateError = getDateFilterError(fromDate, toDate)
   const rangeReady = bothDatesSelected && !dateError
@@ -182,9 +206,7 @@ export function Dashboard() {
   const toMin = fromIsBound ? fromDate : undefined
 
   const clearFilters = () => {
-    setFromDate('')
-    setToDate('')
-    setTimeMode('monthly')
+    updateFilters({ fromDate: '', toDate: '', timeMode: 'monthly' })
   }
   const listQuery = (path: string, extra?: Record<string, string>) => {
     const params = new URLSearchParams()
@@ -221,7 +243,7 @@ export function Dashboard() {
                 value={fromDate}
                 max={fromMax}
                 aria-invalid={dateError?.from || undefined}
-                onChange={(event) => setFromDate(event.target.value)}
+                onChange={(event) => updateFilters({ fromDate: event.target.value })}
               />
             </label>
             <label className="dashboard-date-field">
@@ -233,7 +255,7 @@ export function Dashboard() {
                 min={toMin}
                 max={today}
                 aria-invalid={dateError?.to || undefined}
-                onChange={(event) => setToDate(event.target.value)}
+                onChange={(event) => updateFilters({ toDate: event.target.value })}
               />
             </label>
             {hasDateFilter || !monthly ? (
@@ -245,14 +267,14 @@ export function Dashboard() {
               <button
                 type="button"
                 className={`btn ${monthly ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setTimeMode('monthly')}
+                onClick={() => updateFilters({ timeMode: 'monthly' })}
               >
                 Monthly
               </button>
               <button
                 type="button"
                 className={`btn ${timeMode === 'yearly' ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setTimeMode('yearly')}
+                onClick={() => updateFilters({ timeMode: 'yearly' })}
               >
                 Yearly
               </button>
