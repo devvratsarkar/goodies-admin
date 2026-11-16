@@ -2,5 +2,3 @@
 .env
 *.zip
 /dist
-/dist
-*.html
