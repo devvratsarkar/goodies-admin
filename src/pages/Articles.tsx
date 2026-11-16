@@ -231,7 +231,7 @@ export function Articles() {
             <ArticleThumb src={row.image} />
             <div className="product-cell__text">
               <span className="product-cell__title">{row.title || '—'}</span>
-              {row.slug ? <span className="product-cell__meta">{row.slug}</span> : null}
+              {row.slug ? <span className="product-cell__title" style={{ fontWeight: 500 }}>{row.slug}</span> : null}
             </div>
           </div>
         ),

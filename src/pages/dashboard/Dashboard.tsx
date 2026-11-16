@@ -333,7 +333,7 @@ export function Dashboard() {
           color={DASHBOARD_COLORS.aov}
           hint="Revenue per order placed"
           loading={loading}
-          to={listQuery('/payment-report')}
+          to={listQuery('/customers')}
         />
         <DashboardCard
           icon={CircleCheck}
