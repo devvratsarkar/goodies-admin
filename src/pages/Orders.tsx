@@ -11,6 +11,7 @@ import {
   FileSpreadsheet,
   FileText,
   LoaderCircle,
+  Receipt,
   Package,
   Pause,
   Printer,
@@ -163,7 +164,7 @@ function ActionTip({ title, children }: { title: string; children: ReactNode }) 
 }
 
 type BulkActionOption = {
-  value: 'processing' | 'on-hold' | 'completed' | 'cancelled' | 'csv' | 'invoice' | 'packing-slip' | 'slip'
+  value: 'processing' | 'on-hold' | 'completed' | 'cancelled' | 'csv' | 'invoice' | 'tax-invoice' | 'packing-slip' | 'slip'
   label: string
   icon: LucideIcon
 }
@@ -175,6 +176,7 @@ const BULK_ACTIONS: BulkActionOption[] = [
   { value: 'cancelled', label: 'Change status to cancelled', icon: Ban },
   { value: 'csv', label: 'Export as CSV', icon: FileSpreadsheet },
   { value: 'invoice', label: 'PDF Invoice', icon: FileText },
+  { value: 'tax-invoice', label: 'Tax Invoice (100×150)', icon: Receipt },
   { value: 'packing-slip', label: 'PDF Packing Slip', icon: Package },
   { value: 'slip', label: 'Print 80mm slip', icon: Printer },
 ]
@@ -489,19 +491,29 @@ export function Orders() {
 
   const downloadPdf = async (
     order: OrderListItem,
-    kind: 'invoice' | 'packing-slip',
+    kind: 'invoice' | 'packing-slip' | 'tax-invoice',
   ) => {
     const id = order._id
     if (!canExport || !id) return
     const key = `${id}-${kind}`
     setDownloadingKey(key)
     setError('')
+    const fail =
+      kind === 'invoice'
+        ? 'Failed to download invoice'
+        : kind === 'tax-invoice'
+          ? 'Failed to download tax invoice'
+          : 'Failed to download packing slip'
     try {
       const res =
-        kind === 'invoice' ? await ordersApi.downloadInvoice(id) : await ordersApi.downloadPackingSlip(id)
+        kind === 'invoice'
+          ? await ordersApi.downloadInvoice(id)
+          : kind === 'tax-invoice'
+            ? await ordersApi.downloadTaxInvoice(id)
+            : await ordersApi.downloadPackingSlip(id)
       const contentType = String(res.headers['content-type'] || '')
       if (!contentType.includes('pdf')) {
-        setError(kind === 'invoice' ? 'Failed to download invoice' : 'Failed to download packing slip')
+        setError(fail)
         return
       }
       const blob = new Blob([res.data], { type: 'application/pdf' })
@@ -513,7 +525,7 @@ export function Orders() {
       link.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError(kind === 'invoice' ? 'Failed to download invoice' : 'Failed to download packing slip')
+      setError(fail)
     } finally {
       setDownloadingKey('')
     }
@@ -660,16 +672,23 @@ export function Orders() {
           ? await ordersApi.bulkExportCsv(selectedIds)
           : bulkAction === 'invoice'
             ? await ordersApi.bulkInvoices(selectedIds)
-            : bulkAction === 'slip'
-              ? await ordersApi.bulkOrderSlips(selectedIds)
-              : await ordersApi.bulkPackingSlips(selectedIds)
+            : bulkAction === 'tax-invoice'
+              ? await ordersApi.bulkTaxInvoices(selectedIds)
+              : bulkAction === 'slip'
+                ? await ordersApi.bulkOrderSlips(selectedIds)
+                : await ordersApi.bulkPackingSlips(selectedIds)
       const contentType = String(res.headers['content-type'] || '')
       const isCsv = bulkAction === 'csv'
+      const isZip = bulkAction === 'tax-invoice'
       if (isCsv && !contentType.includes('csv') && !contentType.includes('text')) {
         setError('Failed to export CSV')
         return
       }
-      if (!isCsv && !contentType.includes('pdf')) {
+      if (isZip && !contentType.includes('zip') && !contentType.includes('octet-stream')) {
+        setError('Failed to download tax invoices')
+        return
+      }
+      if (!isCsv && !isZip && !contentType.includes('pdf')) {
         printWindow?.close()
         setError(
           bulkAction === 'invoice'
@@ -700,16 +719,24 @@ export function Orders() {
       const stamp = new Date().toISOString().slice(0, 10)
       const fileName = isCsv
         ? `orders-${stamp}.csv`
-        : bulkAction === 'invoice'
-          ? `invoices-${stamp}.pdf`
-          : `packing-slips-${stamp}.pdf`
-      saveBlob(res.data, fileName, contentType || (isCsv ? 'text/csv' : 'application/pdf'))
+        : isZip
+          ? `tax-invoices-${stamp}.zip`
+          : bulkAction === 'invoice'
+            ? `invoices-${stamp}.pdf`
+            : `packing-slips-${stamp}.pdf`
+      saveBlob(
+        res.data,
+        fileName,
+        contentType || (isCsv ? 'text/csv' : isZip ? 'application/zip' : 'application/pdf'),
+      )
       setSuccess(
         isCsv
           ? `Exported ${selectedIds.length} orders`
-          : bulkAction === 'invoice'
-            ? `Downloaded invoices for ${selectedIds.length} orders`
-            : `Downloaded packing slips for ${selectedIds.length} orders`,
+          : isZip
+            ? `Downloaded tax invoices for ${selectedIds.length} orders`
+            : bulkAction === 'invoice'
+              ? `Downloaded invoices for ${selectedIds.length} orders`
+              : `Downloaded packing slips for ${selectedIds.length} orders`,
       )
     } catch (err) {
       printWindow?.close()
@@ -753,9 +780,9 @@ export function Orders() {
       {
         field: 'actions',
         headerName: 'Actions',
-        width: 186,
-        minWidth: 186,
-        maxWidth: 186,
+        width: 214,
+        minWidth: 214,
+        maxWidth: 214,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
@@ -763,6 +790,7 @@ export function Orders() {
         renderCell: ({ row }) => {
           const order = row
           const invoiceBusy = downloadingKey === `${order._id}-invoice`
+          const taxBusy = downloadingKey === `${order._id}-tax-invoice`
           const slipBusy = downloadingKey === `${order._id}-packing-slip`
           const printBusy = downloadingKey === `${order._id}-slip`
           const currentStatus = normalizeStatus(order.status)
@@ -792,6 +820,19 @@ export function Orders() {
                   aria-label="Download invoice"
                 >
                   {invoiceBusy ? <Download size={16} /> : <FileText size={16} />}
+                </button>
+              </ActionTip>
+              )}
+              {canExport && (
+              <ActionTip title="Download tax invoice">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm btn-icon"
+                  onClick={() => downloadPdf(order, 'tax-invoice')}
+                  disabled={busy}
+                  aria-label="Download tax invoice"
+                >
+                  {taxBusy ? <Download size={16} /> : <Receipt size={16} />}
                 </button>
               </ActionTip>
               )}
