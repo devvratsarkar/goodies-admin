@@ -27,6 +27,7 @@ import {
   Images,
   Star,
   Shield,
+  UserCog,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { getProfileImageUrl } from '../../api/client'
@@ -120,6 +121,7 @@ const navSections: {
       { to: '/smtp-settings', icon: Mail, label: 'SMTP settings', module: 'smtp-settings' },
       { to: '/email-settings', icon: Mails, label: 'Email settings', module: 'email-settings' },
       { to: '/roles', icon: Shield, label: 'Roles & access', module: 'roles' },
+      { to: '/staff', icon: UserCog, label: 'Staff', module: 'staff' },
     ],
   },
 ]

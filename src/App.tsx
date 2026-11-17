@@ -100,6 +100,7 @@ function App() {
         <Route path="smtp-settings" element={<SmtpSettings />} />
         <Route path="email-settings" element={<EmailSettings />} />
         <Route path="roles" element={<Roles />} />
+        <Route path="staff" element={<Roles />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

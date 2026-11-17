@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { accessApi } from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
@@ -63,7 +64,13 @@ export function Roles() {
   const [editUserError, setEditUserError] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
   const [busyUserId, setBusyUserId] = useState('')
-  const [panel, setPanel] = useState<'permissions' | 'staff'>('permissions')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const panel: 'permissions' | 'staff' = location.pathname.startsWith('/staff') ? 'staff' : 'permissions'
+  const showPanel = (next: 'permissions' | 'staff') => {
+    const target = next === 'staff' ? '/staff' : '/roles'
+    if (location.pathname !== target) navigate(target)
+  }
 
   const selected = roles.find((role) => role._id === selectedId) ?? roles[0]
   const isOwnRole = !access.all && Boolean(selected && access.role?._id === selected._id)
@@ -383,7 +390,7 @@ export function Roles() {
             role="tab"
             aria-selected={panel === 'permissions'}
             className={`rbac-tab${panel === 'permissions' ? ' is-active' : ''}`}
-            onClick={() => setPanel('permissions')}
+            onClick={() => showPanel('permissions')}
           >
             Permissions
           </button>
@@ -392,7 +399,7 @@ export function Roles() {
             role="tab"
             aria-selected={panel === 'staff'}
             className={`rbac-tab${panel === 'staff' ? ' is-active' : ''}`}
-            onClick={() => setPanel('staff')}
+            onClick={() => showPanel('staff')}
           >
             Staff users
           </button>
@@ -528,7 +535,7 @@ export function Roles() {
           </div>
         </div>
 
-        {can('roles', 'create') && (
+        {can('staff', 'create') && (
           <form className="rbac-member-form" onSubmit={(event) => void addUser(event)}>
             <label className="rbac-field">
               <span>Name</span>
@@ -594,7 +601,7 @@ export function Roles() {
                         <select
                           className="select"
                           value={user.role?._id ?? ''}
-                          disabled={busy || self || !can('roles', 'edit')}
+                          disabled={busy || self || !can('staff', 'edit')}
                           onChange={(event) => void updateUser(user, { role_id: event.target.value })}
                         >
                           {!user.role && <option value="">No role</option>}
@@ -604,12 +611,12 @@ export function Roles() {
                         </select>
                       </td>
                       <td>
-                        <label className={`toggle-switch toggle-switch--sm${busy || self || !can('roles', 'edit') ? ' is-disabled' : ''}`}>
+                        <label className={`toggle-switch toggle-switch--sm${busy || self || !can('staff', 'edit') ? ' is-disabled' : ''}`}>
                           <input
                             type="checkbox"
                             aria-label={`${user.email} active`}
                             checked={user.status}
-                            disabled={busy || self || !can('roles', 'edit')}
+                            disabled={busy || self || !can('staff', 'edit')}
                             onChange={(event) => void updateUser(user, { status: event.target.checked })}
                           />
                           <span className="toggle-switch-track" aria-hidden>
@@ -619,13 +626,13 @@ export function Roles() {
                       </td>
                       <td>
                         <div className="rbac-team-actions">
-                          {can('roles', 'edit') && !self && (
+                          {can('staff', 'edit') && !self && (
                             <button type="button" className="btn btn-sm rbac-edit-btn" disabled={busy} onClick={() => openEditUser(user)}>
                               <Pencil size={14} />
                               Edit
                             </button>
                           )}
-                          {can('roles', 'delete') && !self && (
+                          {can('staff', 'delete') && !self && (
                             <button type="button" className="btn btn-danger btn-sm" disabled={busy} onClick={() => void removeUser(user)}>
                               Delete
                             </button>

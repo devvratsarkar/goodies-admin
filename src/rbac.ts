@@ -27,6 +27,7 @@ export const MODULES = [
   { key: 'smtp-settings', label: 'SMTP settings', group: 'Settings', path: '/smtp-settings' },
   { key: 'email-settings', label: 'Email settings', group: 'Settings', path: '/email-settings' },
   { key: 'roles', label: 'Roles & access', group: 'Settings', path: '/roles' },
+  { key: 'staff', label: 'Staff', group: 'Settings', path: '/staff' },
 ] as const
 
 export type ModuleKey = (typeof MODULES)[number]['key']
