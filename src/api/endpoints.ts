@@ -41,6 +41,7 @@ import type {
   ExchangeRateListData,
   PaymentReportResponse,
   DashboardData,
+  AnalyticsReport,
   DashboardLeaderboards,
   DashboardPerformance,
   DashboardProductSort,
@@ -825,6 +826,11 @@ export const dashboardApi = {
     api.get<ApiResponse<DashboardRevenue>>('/dashboard/revenue', { params: revenueParams(params) }),
   exportRevenue: (params?: DashboardRevenueParams) =>
     api.get('/dashboard/revenue/export', { params: revenueParams(params, false), responseType: 'blob' }),
+}
+
+export const analyticsApi = {
+  getReport: (params: { fromDate: string; toDate: string }) =>
+    api.get<ApiResponse<AnalyticsReport>>('/analytics', { params }),
 }
 
 type DashboardRangeParams = { fromDate?: string; toDate?: string }

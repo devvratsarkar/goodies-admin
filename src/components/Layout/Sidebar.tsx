@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
+  LineChart,
   Boxes,
   HelpCircle,
   // Store,
@@ -63,6 +64,7 @@ const navSections: {
     title: 'Overview',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard', module: 'dashboard' },
+      { to: '/analytics', icon: LineChart, label: 'Analytics', module: 'analytics' },
     ],
   },
   {
