@@ -707,6 +707,23 @@ export interface DashboardData {
   }
 }
 
+export interface AnalyticsSummary {
+  activeUsers: number
+  sessions: number
+  screenPageViews: number
+  eventCount: number
+  bounceRate: number
+}
+
+export interface AnalyticsReport {
+  summary: AnalyticsSummary
+  realtime?: { activeUsers: number }
+  timeseries: Array<{ date: string; activeUsers: number; sessions: number }>
+  channels: Array<{ name: string; value: number }>
+  topPages: Array<{ path: string; value: number }>
+  countries: Array<{ country: string; value: number }>
+}
+
 export interface DashboardMetric {
   value: number
   previous: number | null
