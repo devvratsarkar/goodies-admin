@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import moment from 'moment'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import { ArrowLeft, Clock, MapPin, Package, Receipt, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 import { orderCancellationApi } from '../api/endpoints'
 import type { OrderCancellationRequest, OrderItemSummary } from '../types/api'
@@ -178,6 +179,8 @@ export function OrderCancellationDetails() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || success, noticeRevision)
   const [request, setRequest] = useState<OrderCancellationRequest | null>(null)
   const [adminNote, setAdminNote] = useState('')
   const [refundStatus, setRefundStatus] = useState('pending')
@@ -229,6 +232,7 @@ export function OrderCancellationDetails() {
       return
     }
     setSaving(true)
+    setNoticeRevision((current) => current + 1)
     setError('')
     setSuccess('')
     try {
@@ -259,6 +263,7 @@ export function OrderCancellationDetails() {
       return
     }
     setSaving(true)
+    setNoticeRevision((current) => current + 1)
     setError('')
     setSuccess('')
     try {
@@ -368,8 +373,12 @@ export function OrderCancellationDetails() {
         </div>
       </section>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {(error || success) ? (
+        <div ref={noticeRef}>
+          {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
+        </div>
+      ) : null}
 
       <div className="card order-items-card">
         <div className="order-info-card-header cancel-items-head">

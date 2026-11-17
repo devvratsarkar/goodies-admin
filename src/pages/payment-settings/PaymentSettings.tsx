@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Banknote, CreditCard, Loader2 } from 'lucide-react'
 import { globalSettingsApi } from '../../api/endpoints'
 import { revalidateStore } from '../../api/revalidateStore'
+import { useScrollToNotice } from '../../hooks/useScrollToNotice'
 import { CodMethods } from './CodMethods'
 import type { GlobalSettings } from '../../types/api'
 import { FormField } from '../../components/ui/FormField'
@@ -97,6 +98,8 @@ export function PaymentSettings() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || message, noticeRevision)
 
   useEffect(() => {
     globalSettingsApi
@@ -125,6 +128,7 @@ export function PaymentSettings() {
   async function saveGateways() {
     if (!canEdit) return
     if (!settings || saving) return
+    setNoticeRevision((current) => current + 1)
     setSaving(true)
     setMessage('')
     setError('')
@@ -177,8 +181,12 @@ export function PaymentSettings() {
         ))}
       </div>
 
-      {tab === 'gateways' && error && <div className="alert alert-error global-settings-alert">{error}</div>}
-      {tab === 'gateways' && message && <div className="alert alert-success global-settings-alert">{message}</div>}
+      {tab === 'gateways' && (error || message) ? (
+        <div ref={noticeRef}>
+          {error && <div className="alert alert-error global-settings-alert">{error}</div>}
+          {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+        </div>
+      ) : null}
 
       {tab === 'gateways' ? (
         <form className="card product-form global-settings-form" onSubmit={(event) => { event.preventDefault(); void saveGateways() }}>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { globalSettingsApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import type { GlobalSettings as GlobalSettingsData } from '../types/api'
 import { FormField } from '../components/ui/FormField'
 import { ImageSourceField } from '../components/media/ImageSourceField'
@@ -238,6 +239,8 @@ export function GlobalSettings() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || message, noticeRevision)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -299,6 +302,7 @@ export function GlobalSettings() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!canEdit) return
+    setNoticeRevision((current) => current + 1)
     setMessage('')
     setError('')
     setSaving(true)
@@ -368,8 +372,12 @@ export function GlobalSettings() {
         </div>
       </div>
 
-        {error && <div className="alert alert-error global-settings-alert">{error}</div>}
-        {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+        {(error || message) ? (
+          <div ref={noticeRef}>
+            {error && <div className="alert alert-error global-settings-alert">{error}</div>}
+            {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+          </div>
+        ) : null}
 
         <div className="card product-form global-settings-form">
           <section className="product-form-section">

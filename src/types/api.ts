@@ -212,6 +212,7 @@ export interface Coupon {
   value: number
   no_coupon?: number
   used_count?: number
+  discount_given?: number
   start_date?: string
   expiry_date?: string
   minimum_cart_value?: number
@@ -601,6 +602,7 @@ export interface PaymentReportItem {
   item?: string
   type?: string
   amount?: number
+  shipping?: number
   currency?: string
   date?: string
   status?: string
@@ -608,6 +610,7 @@ export interface PaymentReportItem {
 
 export interface PaymentReportResponse {
   totalRevenue?: number
+  totalShipping?: number
   payments?: PaymentReportItem[]
   pagination?: {
     totalItems: number
