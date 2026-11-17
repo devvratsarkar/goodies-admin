@@ -1169,6 +1169,8 @@ export interface GlobalSettings {
   default_payment_method?: string
   cod_enable?: boolean
   enable_two_factor_authentication?: boolean
+  enable_bogo?: boolean
+  enable_bogo?: boolean
   cod_charge?: number
   eu_buffer?: number
   eu_vat?: number

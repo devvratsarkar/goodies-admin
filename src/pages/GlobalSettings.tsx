@@ -146,6 +146,7 @@ function parseNum(s: string): number {
 function buildUpdatePayload(
   form: Record<string, string>,
   usStateTaxEnabled: boolean,
+  enableBogo: boolean,
 ): Record<string, unknown> {
   const q = (k: keyof typeof form) => form[k] ?? ''
   return {
@@ -195,6 +196,7 @@ function buildUpdatePayload(
     us_import_tax: parseNum(form.us_import_tax),
     us_state_tax: parseNum(form.us_state_tax),
     us_state_tax_enabled: usStateTaxEnabled,
+    enable_bogo: enableBogo,
     eu_buffer: parseNum(form.eu_buffer),
     eu_vat: parseNum(form.eu_vat),
   }
@@ -225,6 +227,7 @@ export function GlobalSettings() {
   const { canEdit } = useModuleCan('global-settings')
   const [form, setForm] = useState(emptyForm)
   const [usStateTaxEnabled, setUsStateTaxEnabled] = useState(false)
+  const [enableBogo, setEnableBogo] = useState(false)
   const [files, setFiles] = useState<Partial<Record<FileKey, File | null>>>({})
   const [fileUrls, setFileUrls] = useState<Partial<Record<FileKey, string>>>({})
   const [removedImages, setRemovedImages] = useState<Partial<Record<FileKey, boolean>>>({})
@@ -262,9 +265,11 @@ export function GlobalSettings() {
         if (g) {
           setForm(applySettingsToForm(g))
           setUsStateTaxEnabled(Boolean(g.us_state_tax_enabled))
+          setEnableBogo(g.enable_bogo === true)
         } else {
           setForm(emptyForm())
           setUsStateTaxEnabled(false)
+          setEnableBogo(false)
         }
       })
       .catch(() => setError('Failed to load global settings.'))
@@ -307,7 +312,7 @@ export function GlobalSettings() {
     setError('')
     setSaving(true)
     try {
-      const payload = buildUpdatePayload(form, usStateTaxEnabled)
+      const payload = buildUpdatePayload(form, usStateTaxEnabled, enableBogo)
       const fd = new FormData()
       appendPayloadToFormData(fd, payload)
       FILE_KEYS.forEach((key) => {
@@ -715,6 +720,36 @@ export function GlobalSettings() {
               setTwitterImageUrl('')
             }}
           />
+
+          <section className="product-form-section">
+            <div className="product-form-section__head">
+              <h2 className="product-form-section__title">Buy 2 Get 1 Free</h2>
+              <p className="product-form-section__hint">
+                When this is on, every third eligible unit in the cart is free. The cheapest units are chosen first.
+              </p>
+            </div>
+            <div className="payment-gateway-row">
+              <div>
+                <p className="payment-gateway-row__name">Enable offer</p>
+                <p className="payment-gateway-row__note">
+                  Off means the cart and checkout do not give a free unit.
+                </p>
+              </div>
+              <label className="toggle-switch" htmlFor="enable_bogo">
+                <input
+                  id="enable_bogo"
+                  type="checkbox"
+                  checked={enableBogo}
+                  disabled={!canEdit}
+                  aria-label={`${enableBogo ? 'Turn off' : 'Turn on'} Buy 2 Get 1 Free`}
+                  onChange={(event) => setEnableBogo(event.target.checked)}
+                />
+                <span className="toggle-switch-track" aria-hidden>
+                  <span className="toggle-switch-thumb" />
+                </span>
+              </label>
+            </div>
+          </section>
 
           <div className="product-form-actions">
             <SettingsActions saving={saving} onReload={reload} canSave={canEdit} />

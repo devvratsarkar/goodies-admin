@@ -592,6 +592,8 @@ export const ordersApi = {
   getById: (id: string) => api.get<ApiResponse<OrderDetail>>(`/orders/${id}`),
   downloadInvoice: (id: string) =>
     api.get<Blob>(`/orders/${id}/invoice`, { responseType: 'blob' }),
+  downloadTaxInvoice: (id: string) =>
+    api.get<Blob>(`/orders/${id}/tax-invoice`, { responseType: 'blob' }),
   downloadPackingSlip: (id: string) =>
     api.get<Blob>(`/orders/${id}/packing-slip`, { responseType: 'blob' }),
   downloadOrderSlip: (id: string) =>
@@ -605,6 +607,8 @@ export const ordersApi = {
     api.post<Blob>('/orders/bulk/export-csv', { ids }, { responseType: 'blob' }),
   bulkInvoices: (ids: string[]) =>
     api.post<Blob>('/orders/bulk/invoices', { ids }, { responseType: 'blob' }),
+  bulkTaxInvoices: (ids: string[]) =>
+    api.post<Blob>('/orders/bulk/tax-invoices', { ids }, { responseType: 'blob' }),
   bulkPackingSlips: (ids: string[]) =>
     api.post<Blob>('/orders/bulk/packing-slips', { ids }, { responseType: 'blob' }),
   bulkOrderSlips: (ids: string[]) =>
