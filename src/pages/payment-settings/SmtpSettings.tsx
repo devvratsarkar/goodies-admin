@@ -4,6 +4,7 @@ import { smtpSettingsApi } from '../../api/endpoints'
 import { FormField } from '../../components/ui/FormField'
 import type { SmtpSettings as SmtpSettingsData } from '../../types/api'
 import { getApiErrorMessage } from '../../utils/apiError'
+import { useScrollToNotice } from '../../hooks/useScrollToNotice'
 import { useModuleCan } from '../../components/rbac/useModuleCan'
 
 const emptyForm = {
@@ -41,6 +42,8 @@ export function SmtpSettings() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || message, noticeRevision)
 
   useEffect(() => {
     let ignore = false
@@ -80,6 +83,7 @@ export function SmtpSettings() {
   async function save(event: FormEvent) {
     event.preventDefault()
     if (!canEdit) return
+    setNoticeRevision((current) => current + 1)
     const host = form.host.trim()
     const username = form.username.trim()
     const fromName = form.from_name.trim()
@@ -163,8 +167,12 @@ export function SmtpSettings() {
         </div>
       </div>
       <form className="card product-form global-settings-form" onSubmit={save}>
-      {error && <div className="alert alert-error global-settings-alert">{error}</div>}
-      {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+      {(error || message) ? (
+        <div ref={noticeRef}>
+          {error && <div className="alert alert-error global-settings-alert">{error}</div>}
+          {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+        </div>
+      ) : null}
 
       <section className="product-form-section">
         <div className="payment-gateway-list">

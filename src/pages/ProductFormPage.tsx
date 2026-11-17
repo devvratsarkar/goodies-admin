@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import { ExternalLink, Trash2, X } from 'lucide-react'
 import { getIn, useFormik } from 'formik'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -419,7 +420,6 @@ export function ProductFormPage() {
   const [success, setSuccess] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [bundleItems, setBundleItems] = useState<SelectedBundleItem[]>([])
-  const notificationRef = useRef<HTMLDivElement>(null)
   const [slugTouched, setSlugTouched] = useState(false)
   const savedSlug = useRef('')
   const savedGallery = useRef<string[]>([])
@@ -736,11 +736,7 @@ export function ProductFormPage() {
 
   const validationSummary = formik.submitCount > 0 ? firstErrorMessage(formik.errors) : ''
   const bannerMessage = error || validationSummary
-
-  useEffect(() => {
-    if (!bannerMessage && !success) return
-    notificationRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [bannerMessage, success, formik.submitCount])
+  const notificationRef = useScrollToNotice(bannerMessage || success, formik.submitCount)
 
   async function submitProduct(values: ProductForm) {
     setError('')

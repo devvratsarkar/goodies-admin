@@ -13,19 +13,24 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue'
 
 function normalizePayload(payload: unknown): {
   totalRevenue: number
+  totalShipping: number
   payments: PaymentReportItem[]
   totalItems: number
 } {
-  if (!payload || typeof payload !== 'object') return { totalRevenue: 0, payments: [], totalItems: 0 }
+  if (!payload || typeof payload !== 'object') {
+    return { totalRevenue: 0, totalShipping: 0, payments: [], totalItems: 0 }
+  }
   const root = payload as { data?: unknown }
   const data = (root.data && typeof root.data === 'object' ? root.data : root) as {
     totalRevenue?: number
+    totalShipping?: number
     payments?: unknown
     pagination?: { totalItems?: number }
   }
   const payments = Array.isArray(data.payments) ? (data.payments as PaymentReportItem[]) : []
   return {
     totalRevenue: Number(data.totalRevenue ?? 0),
+    totalShipping: Number(data.totalShipping ?? 0),
     payments,
     totalItems: Number(data.pagination?.totalItems ?? payments.length),
   }
@@ -138,6 +143,7 @@ export function PaymentReport() {
   const [totalItems, setTotalItems] = useState(0)
   const [rows, setRows] = useState<PaymentReportItem[]>([])
   const [totalRevenue, setTotalRevenue] = useState(0)
+  const [totalShipping, setTotalShipping] = useState(0)
   const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
@@ -160,6 +166,7 @@ export function PaymentReport() {
         const parsed = normalizePayload(res.data)
         setRows(parsed.payments)
         setTotalRevenue(parsed.totalRevenue)
+        setTotalShipping(parsed.totalShipping)
         setTotalItems(parsed.totalItems)
       })
       .catch(() => {
@@ -217,6 +224,11 @@ export function PaymentReport() {
       header: 'Amount (AED)',
       id: 'amount',
       cell: ({ row }) => formatAed(row.original.amount),
+    },
+    {
+      header: 'Shipping amount',
+      id: 'shipping',
+      cell: ({ row }) => formatAed(row.original.shipping),
     },
     { header: 'Status', accessorKey: 'status', cell: ({ getValue }) => (getValue() as string) || '-' },
     { header: 'Date', accessorKey: 'date', cell: ({ getValue }) => (getValue() as string) || '-' },
@@ -281,9 +293,15 @@ export function PaymentReport() {
         </div>
       </div>
 
-      <div className="card payment-revenue-card">
-        <div className="payment-revenue-card__label">Total revenue</div>
-        <div className="payment-revenue-card__value">{formatAed(totalRevenue)}</div>
+      <div className="payment-summary-row">
+        <div className="card payment-revenue-card">
+          <div className="payment-revenue-card__label">Total revenue</div>
+          <div className="payment-revenue-card__value">{formatAed(totalRevenue)}</div>
+        </div>
+        <div className="card payment-revenue-card">
+          <div className="payment-revenue-card__label">Total shipping collection</div>
+          <div className="payment-revenue-card__value">{formatAed(totalShipping)}</div>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import {
   ArrowLeft,
   Clock,
@@ -247,6 +248,8 @@ export function OrderDetails() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || success, noticeRevision)
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [status, setStatus] = useState('pending')
   const [paymentStatus, setPaymentStatus] = useState('')
@@ -291,6 +294,7 @@ export function OrderDetails() {
     e.preventDefault()
     if (!canEdit || !id) return
     setSaving(true)
+    setNoticeRevision((current) => current + 1)
     setError('')
     setSuccess('')
     try {
@@ -318,6 +322,7 @@ export function OrderDetails() {
   const downloadInvoice = async () => {
     if (!canExport || !id) return
     setDownloadingInvoice(true)
+    setNoticeRevision((current) => current + 1)
     setError('')
     try {
       const res = await ordersApi.downloadInvoice(id)
@@ -439,8 +444,12 @@ export function OrderDetails() {
         </div>
       </section>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {(error || success) ? (
+        <div ref={noticeRef}>
+          {error && <div className="alert alert-error">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
+        </div>
+      ) : null}
 
       <div className="card order-items-card">
         <div className="order-info-card-header">

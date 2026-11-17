@@ -81,6 +81,9 @@ const initialUpdateForm: UpdateFormState = {
   is_auto_apply: false,
 }
 
+const formatAed = (value: number) =>
+  new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
+
 const formatDate = (value?: string) => {
   if (!value) return '-'
   const parsed = new Date(value)
@@ -221,8 +224,10 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
   const [amountFieldErrors, setAmountFieldErrors] = useState<AmountErrors>({})
   const [togglingId, setTogglingId] = useState('')
   const [restoringId, setRestoringId] = useState('')
-  const [fromDate, setFromDate] = useState(() => isoDateParam(searchParams.get('fromDate')))
-  const [toDate, setToDate] = useState(() => isoDateParam(searchParams.get('toDate')))
+  const discountFrom = isoDateParam(searchParams.get('fromDate'))
+  const discountTo = isoDateParam(searchParams.get('toDate'))
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [viewFilter, setViewFilter] = useState<ViewFilter>('all')
@@ -242,8 +247,16 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
     setError('')
     const request = trash
       ? couponsApi.getTrash(searchValue ? { search: searchValue } : undefined)
-      : couponsApi.getAll(searchValue ? { search: searchValue } : undefined)
-    const catalogRequest = !trash && searchValue ? couponsApi.getAll() : null
+      : couponsApi.getAll({
+          ...(searchValue ? { search: searchValue } : {}),
+          ...(discountFrom ? { fromDate: discountFrom } : {}),
+          ...(discountTo ? { toDate: discountTo } : {}),
+        })
+    const dateParams = {
+      ...(discountFrom ? { fromDate: discountFrom } : {}),
+      ...(discountTo ? { toDate: discountTo } : {}),
+    }
+    const catalogRequest = !trash && searchValue ? couponsApi.getAll(dateParams) : null
     Promise.all([request, catalogRequest ?? request])
       .then(([listRes, catalogRes]) => {
         if (seq !== loadSeq.current) return
@@ -263,7 +276,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trash, debouncedSearch])
+  }, [trash, debouncedSearch, discountFrom, discountTo])
 
   const openEdit = (row: Coupon) => {
     setEditingId(row._id)
@@ -549,6 +562,11 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       cell: ({ row }) => formatDate(row.original.start_date),
     },
     {
+      header: 'Coupon Discount',
+      accessorKey: 'coupon_discount',
+      cell: ({ row }) => Number(row.original?.discount_given ?? 0),
+    },
+    {
       header: 'Expiry',
       accessorKey: 'expiry_date',
       cell: ({ row }) => formatDate(row.original.expiry_date),
@@ -579,6 +597,11 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
     },
    
   ]
+
+  const totalCouponDiscount = useMemo(() => {
+    const rows = !trash && debouncedSearch.trim() ? catalog : data
+    return rows.reduce((sum, row) => sum + Number(row.discount_given ?? 0), 0)
+  }, [trash, data, catalog, debouncedSearch])
 
   const viewCounts = useMemo(
     () => ({
@@ -763,6 +786,10 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
           >
             Auto-apply coupons <span>({viewCounts.auto_apply})</span>
           </button>
+          <p className="coupon-discount-total">
+            <span>Total coupon discount</span>
+            {formatAed(totalCouponDiscount)}
+          </p>
         </div>
       )}
       <div className="card" style={{ padding: 14, marginBottom: 12 }}>

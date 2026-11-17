@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Loader2 } from 'lucide-react'
 import { pageNoticesApi } from '../../api/endpoints'
 import { revalidateStore } from '../../api/revalidateStore'
+import { useScrollToNotice } from '../../hooks/useScrollToNotice'
 import type { PageNotices as PageNoticesData } from '../../types/api'
 import { getApiErrorMessage } from '../../utils/apiError'
 import { useModuleCan } from '../../components/rbac/useModuleCan'
@@ -62,6 +63,8 @@ export function PageNotices() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || message, noticeRevision)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -94,6 +97,7 @@ export function PageNotices() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!canEdit) return
+    setNoticeRevision((current) => current + 1)
     setSaving(true)
     setMessage('')
     setError('')
@@ -141,8 +145,12 @@ export function PageNotices() {
           </div>
         </div>
 
-        {error && <div className="alert alert-error global-settings-alert">{error}</div>}
-        {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+        {(error || message) ? (
+          <div ref={noticeRef}>
+            {error && <div className="alert alert-error global-settings-alert">{error}</div>}
+            {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+          </div>
+        ) : null}
 
         <div className="page-notices">
           {PAGE_NOTICES.map((notice) => (

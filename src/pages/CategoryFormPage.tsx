@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import { categoriesApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import { ImageSourceField } from '../components/media/ImageSourceField'
 import { slugify } from '../utils/slugify'
 import type { Category, CategoryFaq, CategoryPayload } from '../types/api'
@@ -122,6 +123,8 @@ export function CategoryFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || success, noticeRevision)
 
   useEffect(() => {
     let ignore = false
@@ -242,6 +245,7 @@ export function CategoryFormPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    setNoticeRevision((current) => current + 1)
     const nextErrors: { name?: string; slug?: string } = {}
     if (!form.name.trim()) nextErrors.name = 'Name is required.'
     if (!form.slug.trim()) nextErrors.slug = 'Slug is required.'
@@ -271,7 +275,6 @@ export function CategoryFormPage() {
       ])
       if (isEdit) {
         setSuccess('Category updated')
-        window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
         navigate('/categories')
       }
@@ -314,8 +317,11 @@ export function CategoryFormPage() {
         <div className="product-form-bar__actions">{saveActions()}</div>
       </div>
 
-      {error && <div className="alert alert-error product-form-error">{error}</div>}
-      {!error && success && <div className="alert alert-success product-form-error" role="status">{success}</div>}
+      {error ? (
+        <div ref={noticeRef} className="alert alert-error product-form-error">{error}</div>
+      ) : success ? (
+        <div ref={noticeRef} className="alert alert-success product-form-error" role="status">{success}</div>
+      ) : null}
 
       <div className="card product-form">
         <FormSection title="Category details" hint="Name, parent, and how this category appears in the store.">

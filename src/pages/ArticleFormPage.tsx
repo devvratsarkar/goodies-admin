@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { articlesApi, blogCategoriesApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import { slugify } from '../utils/slugify'
 import { getApiErrorMessage } from '../utils/apiError'
 import type { Article, BlogCategory } from '../types/api'
@@ -89,6 +90,8 @@ export function ArticleFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const noticeRef = useScrollToNotice(error || success, noticeRevision)
   const [contentEditorKey, setContentEditorKey] = useState(0)
   const [slugTouched, setSlugTouched] = useState(false)
   const savedSlug = useRef('')
@@ -170,6 +173,7 @@ export function ArticleFormPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setNoticeRevision((current) => current + 1)
     setSubmitting(true)
     setError('')
     setSuccess('')
@@ -230,7 +234,6 @@ export function ArticleFormPage() {
         savedSlug.current = slug
         savedCategorySlug.current = categorySlug
         setSuccess('Blog updated')
-        window.scrollTo({ top: 0, behavior: 'smooth' })
       } else {
         navigate('/articles')
       }
@@ -269,8 +272,11 @@ export function ArticleFormPage() {
         </div>
         <div className="product-form-bar__actions">{saveActions()}</div>
       </div>
-      {error && <div className="alert alert-error product-form-error">{error}</div>}
-      {!error && success && <div className="alert alert-success product-form-error" role="status">{success}</div>}
+      {error ? (
+        <div ref={noticeRef} className="alert alert-error product-form-error">{error}</div>
+      ) : success ? (
+        <div ref={noticeRef} className="alert alert-success product-form-error" role="status">{success}</div>
+      ) : null}
       <div className="card product-form">
           <div className="form-row">
             <FormField label="Title" required>
