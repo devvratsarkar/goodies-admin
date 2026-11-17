@@ -45,6 +45,9 @@ const isRejected = (status?: string) => {
   return key === 'rejected' || key === 'remove'
 }
 
+const isDecided = (status?: string) =>
+  String(status || '').toLowerCase() === 'approved' || isRejected(status)
+
 const statusLabel = (status?: string) => {
   const key = String(status || '').toLowerCase()
   if (key === 'approved') return 'Approved'
@@ -135,7 +138,7 @@ export function Reviews() {
   }
 
   const decide = async (review: ProductReview, decision: 'approved' | 'rejected') => {
-    if (!canEdit) return
+    if (!canEdit || isDecided(review.status)) return
     setActingId(review._id)
     setError('')
     try {
@@ -173,8 +176,11 @@ export function Reviews() {
       cell: ({ row }) => {
         const review = row.original
         const busy = actingId === review._id
+        const decided = isDecided(review.status)
         const approved = String(review.status || '').toLowerCase() === 'approved'
-        const rejected = isRejected(review.status)
+        const lockedTitle = approved
+          ? 'Approved reviews cannot be changed'
+          : 'Rejected reviews cannot be changed'
         return (
           <div className="review-row-actions">
             <button
@@ -190,9 +196,9 @@ export function Reviews() {
             <button
               type="button"
               className="review-icon-btn review-icon-btn--approve"
-              title={approved ? 'Already approved' : 'Approve'}
+              title={decided ? lockedTitle : 'Approve'}
               aria-label="Approve review"
-              disabled={busy || approved}
+              disabled={busy || decided}
               onClick={() => decide(review, 'approved')}
             >
               <Check size={15} />
@@ -202,9 +208,9 @@ export function Reviews() {
             <button
               type="button"
               className="review-icon-btn review-icon-btn--reject"
-              title={rejected ? 'Already rejected' : 'Reject'}
+              title={decided ? lockedTitle : 'Reject'}
               aria-label="Reject review"
-              disabled={busy || rejected}
+              disabled={busy || decided}
               onClick={() => decide(review, 'rejected')}
             >
               <X size={15} />
@@ -345,7 +351,7 @@ export function Reviews() {
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
-                disabled={actingId === viewed._id || String(viewed.status || '').toLowerCase() === 'approved'}
+                disabled={actingId === viewed._id || isDecided(viewed.status)}
                 onClick={() => decide(viewed, 'approved')}
               >
                 <Check size={14} />
@@ -354,7 +360,7 @@ export function Reviews() {
               <button
                 type="button"
                 className="btn btn-danger btn-sm"
-                disabled={actingId === viewed._id || isRejected(viewed.status)}
+                disabled={actingId === viewed._id || isDecided(viewed.status)}
                 onClick={() => decide(viewed, 'rejected')}
               >
                 <X size={14} />
