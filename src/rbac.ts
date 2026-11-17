@@ -3,6 +3,7 @@ export type Action = (typeof ACTIONS)[number]
 
 export const MODULES = [
   { key: 'dashboard', label: 'Dashboard', group: 'Overview', path: '/' },
+  { key: 'analytics', label: 'Analytics', group: 'Overview', path: '/analytics' },
   { key: 'categories', label: 'Categories', group: 'Catalog', path: '/categories' },
   { key: 'sizes', label: 'Sizes', group: 'Catalog', path: '/sizes' },
   { key: 'products', label: 'Products', group: 'Catalog', path: '/products' },

@@ -6,6 +6,7 @@ import { ForgotPassword } from './pages/ForgotPassword'
 import { VerifyOtp } from './pages/VerifyOtp'
 import { ResetPassword } from './pages/ResetPassword'
 import { Dashboard } from './pages/dashboard/Dashboard'
+import { Analytics } from './pages/analytics/Analytics'
 import { Categories } from './pages/Categories'
 import { CategoryFormPage } from './pages/CategoryFormPage'
 import { Brands } from './pages/Brands'
@@ -56,6 +57,7 @@ function App() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="analytics" element={<Analytics />} />
         <Route path="categories" element={<Categories />} />
         <Route path="categories/trash" element={<Categories trash />} />
         <Route path="categories/new" element={<CategoryFormPage />} />
