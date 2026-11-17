@@ -15,6 +15,11 @@ const GATEWAYS = [
   { key: 'tamara_enable', method: 'tamara', name: 'Tamara', note: 'Pay later in installments.' },
 ] as const
 
+const DEFAULT_METHODS = [
+  ...GATEWAYS.map(({ method, name }) => ({ method, name })),
+  { method: 'cod', name: 'COD' },
+] as const
+
 type FlagKey = (typeof GATEWAYS)[number]['key']
 
 type GatewayDraft = {
@@ -27,7 +32,7 @@ type GatewayDraft = {
 function draftFromSettings(settings: GlobalSettings | null): GatewayDraft {
   return {
     default_payment_method:
-      GATEWAYS.find((gateway) => gateway.method === settings?.default_payment_method)?.method ?? 'ziina',
+      DEFAULT_METHODS.find((method) => method.method === settings?.default_payment_method)?.method ?? 'ziina',
     ziina_enable: settings?.ziina_enable !== false,
     tabby_enable: settings?.tabby_enable !== false,
     tamara_enable: settings?.tamara_enable !== false,
@@ -200,9 +205,9 @@ export function PaymentSettings() {
                   disabled={saving || !settings}
                   onChange={(event) => setDefaultMethod(event.target.value)}
                 >
-                  {GATEWAYS.map((gateway) => (
-                    <option key={gateway.method} value={gateway.method}>
-                      {gateway.name}
+                  {DEFAULT_METHODS.map((method) => (
+                    <option key={method.method} value={method.method}>
+                      {method.name}
                     </option>
                   ))}
                 </select>
