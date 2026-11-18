@@ -262,13 +262,21 @@ function createSizeVariant(sizeName: string, sku: string, weight: number): Varia
   }
 }
 
-function withFirstSizeDefault(variants: VariantItem[]): VariantItem[] {
-  if (variants.length === 0) return variants
-  const defaultIndex = variants.findIndex((variant) => variant.is_default)
-  const index = defaultIndex === -1 ? 0 : defaultIndex
-  if (variants.every((variant, variantIndex) => variant.is_default === (variantIndex === index))) return variants
-  return variants.map((variant, variantIndex) =>
-    variant.is_default === (variantIndex === index) ? variant : { ...variant, is_default: variantIndex === index },
+function withLowestPriceDefault(variants: VariantItem[], locked: boolean): VariantItem[] {
+  if (locked || variants.length === 0) return variants
+  const ready = variants.every((variant) => Number(variant.max_price) > 0 && Number(variant.price) > 0)
+  if (!ready) {
+    return variants.some((variant) => variant.is_default)
+      ? variants.map((variant) => (variant.is_default ? { ...variant, is_default: false } : variant))
+      : variants
+  }
+  let lowest = 0
+  for (let index = 1; index < variants.length; index += 1) {
+    if (Number(variants[index].price) < Number(variants[lowest].price)) lowest = index
+  }
+  if (variants.every((variant, index) => variant.is_default === (index === lowest))) return variants
+  return variants.map((variant, index) =>
+    variant.is_default === (index === lowest) ? variant : { ...variant, is_default: index === lowest },
   )
 }
 
@@ -399,6 +407,7 @@ export function ProductFormPage() {
   const [sizeMasters, setSizeMasters] = useState<Size[]>([])
   const [selectedSizeNames, setSelectedSizeNames] = useState<string[]>([])
   const hiddenVariantsRef = useRef<Map<string, VariantItem>>(new Map())
+  const defaultLockedRef = useRef(false)
   const [categoryInput, setCategoryInput] = useState('')
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false)
   const categoryDropdownRef = useRef<HTMLDivElement | null>(null)
@@ -489,6 +498,7 @@ export function ProductFormPage() {
             max_price: 0,
           }
           setSelectedSizeNames(savedSizeNames)
+          defaultLockedRef.current = variants.some((variant) => variant.is_default === true)
           savedSlug.current = isClone ? '' : toText(data?.slug)
           const copySku = (value: unknown) => (isClone ? cloneSku(toText(value)) : toText(value))
           const description = toText(data?.description)
@@ -565,6 +575,7 @@ export function ProductFormPage() {
           setCategoryInput('')
           setBundleItems([])
           setSelectedSizeNames([])
+          defaultLockedRef.current = false
           setThumbnailFile(null)
           setImageFiles([])
           setExistingOgImage('')
@@ -649,14 +660,14 @@ export function ProductFormPage() {
     current.variants.forEach((variant) => {
       if (!names.includes(variant.size)) hiddenVariantsRef.current.set(variant.size, variant)
     })
-    return withFirstSizeDefault(names.map((name) => {
+    return withLowestPriceDefault(names.map((name) => {
       const kept = visible.get(name) ?? hiddenVariantsRef.current.get(name)
       if (kept) {
         hiddenVariantsRef.current.delete(name)
         return kept
       }
       return createSizeVariant(name, current.sku, current.weight)
-    }))
+    }), defaultLockedRef.current)
   }
 
   const toggleSizeSelection = (name: string) => {
@@ -671,11 +682,12 @@ export function ProductFormPage() {
     setForm((prev) => {
       const next = [...prev.variants]
       next[index] = { ...next[index], [key]: value }
-      return { ...prev, variants: next }
+      return { ...prev, variants: withLowestPriceDefault(next, defaultLockedRef.current) }
     })
   }
 
   const setDefaultVariant = (index: number, checked: boolean) => {
+    defaultLockedRef.current = true
     setForm((prev) => ({
       ...prev,
       variants: prev.variants.map((variant, variantIndex) => ({
@@ -1253,7 +1265,7 @@ export function ProductFormPage() {
           {form.product_type === 'variable' && (
             <div className="product-type-panel">
               <h3 className="product-type-panel__title">Sizes and variants</h3>
-              <p className="product-type-panel__hint">Check a size to set its price and stock. The first size you add is the default. Uncheck a size to hide it. MRP is the original price, shown when it is higher. Selling price is the amount the customer pays.</p>
+              <p className="product-type-panel__hint">Check a size to set its price and stock. Default stays off until every size has MRP and selling price, then the lowest selling price is selected. A Default you check yourself is kept. Uncheck a size to hide it. MRP is the original price, shown when it is higher. Selling price is the amount the customer pays.</p>
               <div className="variant-toolbar">
                 <div className="product-size-list">
                   {sizeSelectOptions.map((opt) => (
