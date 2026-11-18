@@ -878,9 +878,12 @@ export interface OrderDetail extends OrderListItem {
   user_id?: string
   subtotal_amount?: number | null
   shipping_amount?: number | null
+  tax_amount?: number | null
   fee_amount?: number | null
   cod_amount?: number | null
   discount_amount?: number | null
+  bogo_discount?: number | null
+  bogo_label?: string | null
   coupon_code?: string | null
   coupon_type?: string | null
   customer_note?: string | null

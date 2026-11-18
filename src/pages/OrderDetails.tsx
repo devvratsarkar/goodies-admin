@@ -133,8 +133,11 @@ const amountOf = (value: unknown) => {
 function OrderTotals({ order, currency }: { order: OrderDetail | null; currency: string }) {
   const subtotal = amountOf(order?.subtotal_amount)
   const shipping = amountOf(order?.shipping_amount)
+  const tax = amountOf(order?.tax_amount)
   const cod = amountOf(order?.cod_amount)
   const discount = amountOf(order?.discount_amount)
+  const bogo = amountOf(order?.bogo_discount)
+  const bogoLabel = String(order?.bogo_label || '').trim() || 'Buy 2 Get 1 Free – Cheapest Item Free'
   const couponCode = String(order?.coupon_code || '').trim()
   const customerNote = String(order?.customer_note || '').trim()
   const orderTotal = amountOf(order?.total_amount)
@@ -147,10 +150,18 @@ function OrderTotals({ order, currency }: { order: OrderDetail | null; currency:
     { label: 'Items Subtotal', value: formatMoney(currency, subtotal), emphasize: false },
     { label: 'Shipping', value: formatMoney(currency, shipping), emphasize: false },
     ...(cod > 0 ? [{ label: 'COD charge', value: formatMoney(currency, cod), emphasize: false }] : []),
+    ...(tax > 0 ? [{ label: 'Tax', value: formatMoney(currency, tax), emphasize: false }] : []),
     ...(discount > 0 || couponCode
       ? [{
           label: couponCode ? `Discount (${couponCode})` : 'Discount',
           value: `− ${formatMoney(currency, discount)}`,
+          emphasize: false,
+        }]
+      : []),
+    ...(bogo > 0
+      ? [{
+          label: bogoLabel,
+          value: `− ${formatMoney(currency, bogo)}`,
           emphasize: false,
         }]
       : []),
