@@ -895,7 +895,8 @@ export function ProductFormPage() {
       }
       if (isEdit && id) await productsApi.update(id, payload)
       else await productsApi.create(payload)
-      const slugs = [...new Set([savedSlug.current, current.slug].map((slug) => slug.trim()).filter(Boolean))]
+      const slug = isEdit && id ? toText((await productsApi.getById(id)).data?.data?.slug).trim() : ''
+      const slugs = [...new Set([savedSlug.current, current.slug, slug].map((item) => item.trim()).filter(Boolean))]
       await revalidateStore([
         "home",
         "shop",
@@ -905,6 +906,8 @@ export function ProductFormPage() {
       ])
       // Stay on the edit form after update; redirect only for create/clone.
       if (isEdit) {
+        if (slug) setFieldValue('slug', slug, false)
+        savedSlug.current = slug || savedSlug.current
         formik.setErrors({})
         setSuccess('Product updated')
       } else navigate('/products')
