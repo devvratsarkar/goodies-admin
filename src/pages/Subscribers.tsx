@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { useSearchParams } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
 import { FileSpreadsheet } from 'lucide-react'
@@ -135,16 +136,18 @@ export function Subscribers() {
   const [toDate, setToDate] = useState(() => isoDateParam(searchParams.get('toDate')))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
   useEffect(() => {
     setLoading(true)
     setError('')
     subscribersApi
-      .getAll()
+      .getAll({ search: debouncedSearch.trim() || undefined })
       .then((res) => setData(toArray<Subscriber>(res.data)))
       .catch(() => setError('Failed to load subscribers'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [debouncedSearch])
 
   const filteredData = data.filter((row) => {
     if (countries.length && !countries.includes(getCountryCode(row).toUpperCase())) return false
@@ -162,7 +165,7 @@ export function Subscribers() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
@@ -205,6 +208,7 @@ export function Subscribers() {
         data={filteredData}
         columns={columns}
         searchPlaceholder="Search subscribers..."
+        serverSearch={{ value: search, onChange: setSearch }}
         headerRight={canExport ? (
           <button type="button" className="btn btn-primary btn-sm" onClick={() => downloadSubscribersExcel(filteredData)}>
             <FileSpreadsheet size={16} />

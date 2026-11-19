@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil } from 'lucide-react'
 import { emailNotificationsApi } from '../api/endpoints'
@@ -43,20 +44,23 @@ export function EmailNotificationSettings() {
   const [editing, setEditing] = useState<EmailNotificationSetting | null>(null)
   const [form, setForm] = useState<EmailForm>(initialForm)
   const [submitting, setSubmitting] = useState(false)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
-  const load = () => {
+  const load = (term = debouncedSearch) => {
     setLoading(true)
     setError('')
     emailNotificationsApi
-      .getAll()
+      .getAll({ search: term.trim() || undefined })
       .then((res) => setRows(toArray<EmailNotificationSetting>(res.data)))
       .catch(() => setError('Failed to load email settings'))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    load()
-  }, [])
+    load(debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
 
   const openEdit = (row: EmailNotificationSetting) => {
     setEditing(row)
@@ -143,13 +147,19 @@ export function EmailNotificationSettings() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && rows.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      <DataTable className="shipping-table" data={rows} columns={columns} searchPlaceholder="Search email settings..." />
+      <DataTable
+        className="shipping-table"
+        data={rows}
+        columns={columns}
+        searchPlaceholder="Search email settings..."
+        serverSearch={{ value: search, onChange: setSearch }}
+      />
 
       {editing && (
         <Modal title={editing.label || editing.key} onClose={closeModal}>

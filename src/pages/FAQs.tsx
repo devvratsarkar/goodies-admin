@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { useFormik } from 'formik'
 import { faqsApi } from '../api/endpoints'
 import { revalidateStore } from '../api/revalidateStore'
@@ -31,12 +32,14 @@ export function FAQs() {
   const [success, setSuccess] = useState('')
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
-  const load = () => {
+  const load = (term = debouncedSearch) => {
     setLoading(true)
     setError('')
     faqsApi
-      .getAll()
+      .getAll({ search: term.trim() || undefined })
       .then((res) => {
         const d = (res.data as { data?: FAQ[] })?.data
         const list = Array.isArray(d) ? d : (d && typeof d === 'object' && 'list' in d ? (d as { list?: FAQ[] }).list ?? [] : [])
@@ -46,7 +49,10 @@ export function FAQs() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => load(), [])
+  useEffect(() => {
+    load(debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
 
   const formik = useFormik({
     initialValues: emptyFaq,
@@ -139,7 +145,7 @@ export function FAQs() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   const questionError = fieldError('question')
   const answerError = fieldError('answer')
@@ -161,7 +167,12 @@ export function FAQs() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      <DataTable data={data} columns={columns} searchPlaceholder="Search FAQs..." />
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search FAQs..."
+        serverSearch={{ value: search, onChange: setSearch }}
+      />
 
       {modal && (
         <Modal title={modal === 'create' ? 'Create FAQ' : 'Edit FAQ'} onClose={closeModal} wide>

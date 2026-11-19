@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { testimonialMastersApi } from '../api/endpoints'
 import { confirmDeleteItem } from '../utils/adminConfirm'
 import type { TestimonialMaster } from '../types/api'
@@ -35,12 +36,14 @@ export function Testimonials() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState(initialForm)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
-  const load = () => {
+  const load = (term = debouncedSearch) => {
     setLoading(true)
     setError('')
     testimonialMastersApi
-      .getAll()
+      .getAll({ search: term.trim() || undefined })
       .then((res) => {
         const d = (res.data as { data?: TestimonialMaster[] | { list?: TestimonialMaster[] } })?.data
         const list = Array.isArray(d) ? d : (d && typeof d === 'object' && 'list' in d ? (d as { list?: TestimonialMaster[] }).list ?? [] : [])
@@ -50,7 +53,10 @@ export function Testimonials() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => load(), [])
+  useEffect(() => {
+    load(debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
 
   const openEdit = (row: TestimonialMaster) => {
     setEditingId(row._id)
@@ -160,7 +166,7 @@ export function Testimonials() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
@@ -177,7 +183,12 @@ export function Testimonials() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      <DataTable data={data} columns={columns} searchPlaceholder="Search testimonials..." />
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search testimonials..."
+        serverSearch={{ value: search, onChange: setSearch }}
+      />
 
       {modal && (
         <Modal title={modal === 'create' ? 'Create Testimonial' : 'Edit Testimonial'} onClose={closeModal}>

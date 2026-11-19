@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { contactUsApi } from '../api/endpoints'
 import type { ContactUs } from '../types/api'
 import { DataTable } from '../components/ui/DataTable'
@@ -10,17 +11,21 @@ export function ContactUs() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [active, setActive] = useState<ContactUs | null>(null)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
   useEffect(() => {
+    setLoading(true)
+    setError('')
     contactUsApi
-      .getAll()
+      .getAll({ search: debouncedSearch.trim() || undefined })
       .then((res) => {
         const d = (res.data as { data?: ContactUs[] })?.data
         setData(Array.isArray(d) ? d : [])
       })
       .catch(() => setError('Failed to load contact messages'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [debouncedSearch])
 
   const columns: ColumnDef<ContactUs, unknown>[] = [
     { header: 'First name', accessorKey: 'first_name' },
@@ -62,14 +67,19 @@ export function ContactUs() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
-  if (error) return <div className="alert alert-error">{error}</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
       <h1 className="page-title">Contact Enquiry</h1>
       <p className="page-subtitle">View contact form submissions.</p>
-      <DataTable data={data} columns={columns} searchPlaceholder="Search contacts..." />
+      {error && <div className="alert alert-error">{error}</div>}
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search contacts..."
+        serverSearch={{ value: search, onChange: setSearch }}
+      />
 
       {active && (
         <Modal title="Enquiry message" onClose={() => setActive(null)}>

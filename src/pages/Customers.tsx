@@ -13,6 +13,7 @@ import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getCountryNameOptions, matchCountryName } from '../utils/country'
 import { isoDateParam } from '../utils/dateQuery'
 import { useModuleCan } from '../components/rbac/useModuleCan'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 
 const COUNTRY_OPTIONS = getCountryNameOptions()
 
@@ -177,16 +178,19 @@ export function Customers() {
   const [appliedToDate, setAppliedToDate] = useState(initialToDate)
   const [countryFilter, setCountryFilter] = useState('')
   const [appliedCountry, setAppliedCountry] = useState('')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const load = (fromOverride = appliedFromDate, toOverride = appliedToDate) => {
+  const load = (fromOverride = appliedFromDate, toOverride = appliedToDate, searchOverride = debouncedSearch) => {
     setLoading(true)
     setError('')
     customersApi
       .getAll({
         fromDate: fromOverride || undefined,
         toDate: toOverride || undefined,
+        search: searchOverride.trim() || undefined,
       })
       .then((res) => setRows(toArray(res.data)))
       .catch(() => setError('Failed to load customers'))
@@ -197,9 +201,9 @@ export function Customers() {
   }
 
   useEffect(() => {
-    load()
+    load(appliedFromDate, appliedToDate, debouncedSearch)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [debouncedSearch])
 
   const applyJoinDateFilter = () => {
     setAppliedFromDate(fromDate)
@@ -594,6 +598,7 @@ export function Customers() {
         pageSize={50}
         pageSizeOptions={[50, 100, 200, 500]}
         searchPlaceholder="Search customers..."
+        serverSearch={{ value: search, onChange: setSearch }}
         summary={(list) => <CustomerSummary rows={list} />}
         headerRight={canExport ? (
           <button type="button" className="btn btn-primary btn-sm" onClick={handleExport} disabled={exporting}>

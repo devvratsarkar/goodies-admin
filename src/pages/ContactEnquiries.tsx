@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { useSearchParams } from 'react-router-dom'
 import type { ColumnDef } from '@tanstack/react-table'
 import { FileSpreadsheet, Eye } from 'lucide-react'
@@ -63,16 +64,18 @@ export function ContactEnquiries() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [viewEnquiry, setViewEnquiry] = useState<ContactUs | null>(null)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
   useEffect(() => {
     setLoading(true)
     setError('')
     contactUsApi
-      .getAll()
+      .getAll({ search: debouncedSearch.trim() || undefined })
       .then((res) => setData(toArray<ContactUs>(res.data)))
       .catch(() => setError('Failed to load contact enquiries'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [debouncedSearch])
 
   const columns: ColumnDef<ContactUs>[] = [
     {
@@ -118,7 +121,7 @@ export function ContactEnquiries() {
 
   const visibleRows = data.filter((row) => isWithinIsoDates(row.createdAt, fromDate, toDate))
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
@@ -146,6 +149,7 @@ export function ContactEnquiries() {
         data={visibleRows}
         columns={columns}
         searchPlaceholder="Search name, email, phone, or message..."
+        serverSearch={{ value: search, onChange: setSearch }}
         headerRight={canExport ? (
           <button type="button" className="btn btn-primary btn-sm" onClick={() => downloadContactEnquiriesExcel(visibleRows)}>
             <FileSpreadsheet size={16} />
