@@ -23,7 +23,7 @@ function readSettings(res: { data: unknown }) {
   return body?.data ?? null
 }
 
-const SMTP_PASSWORD_MAX = 128
+const SMTP_PASSWORD_MAX = 64
 const SMTP_PASSWORD_ERROR = `Password must be ${SMTP_PASSWORD_MAX} characters or fewer.`
 
 function isEmail(value: string) {
@@ -92,7 +92,6 @@ export function SmtpSettings() {
     const password = passwordField?.value ?? form.password
     const port = Number(form.port)
     const passwordError = passwordLengthError(password)
-
     if (passwordError) {
       setError(passwordError)
       setMessage('')

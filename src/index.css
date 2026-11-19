@@ -434,12 +434,14 @@ html.dark .btn:has(> svg.lucide-trash-2):not(.btn-icon):not(.btn-danger):hover {
 }
 
 .input.is-invalid,
-.textarea.is-invalid {
+.textarea.is-invalid,
+.select.is-invalid {
   border-color: var(--danger);
 }
 
 .input.is-invalid:focus,
-.textarea.is-invalid:focus {
+.textarea.is-invalid:focus,
+.select.is-invalid:focus {
   border-color: var(--danger);
   /* box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.16); */
 }
@@ -8507,7 +8509,8 @@ html.dark .categories-toolbar {
   min-height: 120px;
 }
 
-.faq-answer-editor.is-invalid .article-mdx-editor-wrap {
+.faq-answer-editor.is-invalid .article-mdx-editor-wrap,
+#article-description.is-invalid .article-mdx-editor-wrap {
   border-color: var(--danger);
 }
 

@@ -92,6 +92,12 @@ export function ArticleFormPage() {
   const [success, setSuccess] = useState('')
   const [noticeRevision, setNoticeRevision] = useState(0)
   const noticeRef = useScrollToNotice(error || success, noticeRevision)
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string
+    slug?: string
+    category?: string
+    description?: string
+  }>({})
   const [contentEditorKey, setContentEditorKey] = useState(0)
   const [slugTouched, setSlugTouched] = useState(false)
   const savedSlug = useRef('')
@@ -174,25 +180,30 @@ export function ArticleFormPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setNoticeRevision((current) => current + 1)
+    const slug = slugify(form.slug)
+    const nextErrors: { title?: string; slug?: string; category?: string; description?: string } = {}
+    if (!form.title.trim()) nextErrors.title = 'Title is required.'
+    if (!slug) nextErrors.slug = 'Slug is required.'
+    if (!form.category) nextErrors.category = 'Category is required.'
+    if (!form.description.trim()) nextErrors.description = 'Description is required.'
+    setFieldErrors(nextErrors)
+    const firstError = nextErrors.title || nextErrors.slug || nextErrors.category || nextErrors.description
+    if (firstError) {
+      setError(firstError)
+      setSuccess('')
+      const fieldId = nextErrors.title
+        ? 'article-title'
+        : nextErrors.slug
+          ? 'article-slug'
+          : nextErrors.category
+            ? 'article-category'
+            : 'article-description'
+      document.getElementById(fieldId)?.focus()
+      return
+    }
     setSubmitting(true)
     setError('')
     setSuccess('')
-    if (!form.category) {
-      setError('Category is required.')
-      setSubmitting(false)
-      return
-    }
-    if (!form.description.trim()) {
-      setError('Description is required.')
-      setSubmitting(false)
-      return
-    }
-    const slug = slugify(form.slug)
-    if (!slug) {
-      setError('Slug is required.')
-      setSubmitting(false)
-      return
-    }
     try {
       const fd = new FormData()
       fd.append('title', form.title)
@@ -264,7 +275,7 @@ export function ArticleFormPage() {
   )
 
   return (
-    <form onSubmit={submit} className="product-form-page">
+    <form noValidate onSubmit={submit} className="product-form-page">
       <div className="product-form-bar">
         <div className="product-form-bar__copy">
           <h1 className="page-title">{isEdit ? 'Edit blog' : 'Add blog'}</h1>
@@ -279,42 +290,51 @@ export function ArticleFormPage() {
       ) : null}
       <div className="card product-form">
           <div className="form-row">
-            <FormField label="Title" required>
+            <FormField label="Title" htmlFor="article-title" required error={fieldErrors.title}>
               <input
-                className="input"
+                id="article-title"
+                className={`input${fieldErrors.title ? ' is-invalid' : ''}`}
                 value={form.title}
                 onChange={(e) => {
                   const title = e.target.value
+                  setFieldErrors((current) => ({
+                    ...current,
+                    title: undefined,
+                    ...(slugTouched ? {} : { slug: undefined }),
+                  }))
                   setForm((p) => ({
                     ...p,
                     title,
                     slug: slugTouched && p.slug.trim() ? p.slug : slugify(title),
                   }))
                 }}
-                required
               />
             </FormField>
-            <FormField label="Slug" required>
+            <FormField label="Slug" htmlFor="article-slug" required error={fieldErrors.slug}>
               <input
-                className="input"
+                id="article-slug"
+                className={`input${fieldErrors.slug ? ' is-invalid' : ''}`}
                 value={form.slug}
                 onChange={(e) => {
                   const slug = slugify(e.target.value, { trim: false })
                   setSlugTouched(slug.trim().length > 0)
+                  setFieldErrors((current) => ({ ...current, slug: undefined }))
                   setForm((p) => ({ ...p, slug }))
                 }}
                 onBlur={() => setForm((p) => ({ ...p, slug: slugify(p.slug) }))}
-                required
               />
             </FormField>
           </div>
           <div className="form-row">
-            <FormField label="Category" required>
+            <FormField label="Category" htmlFor="article-category" required error={fieldErrors.category}>
               <select
-                className="select"
+                id="article-category"
+                className={`select${fieldErrors.category ? ' is-invalid' : ''}`}
                 value={form.category}
-                onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-                required
+                onChange={(e) => {
+                  setFieldErrors((current) => ({ ...current, category: undefined }))
+                  setForm((p) => ({ ...p, category: e.target.value }))
+                }}
               >
                 <option value="">Select category</option>
                 {categories.map((category) => (
@@ -343,13 +363,18 @@ export function ArticleFormPage() {
               Active
             </label>
           </FormField>
-          <FormField label="Description" required hint="Toolbar for formatting; use source mode for raw markdown / MDX.">
-            <ArticleMdxEditor
-              key={isEdit ? `${id}-${contentEditorKey}` : 'new-article'}
-              markdown={form.description}
-              onChange={(md) => setForm((p) => ({ ...p, description: md }))}
-              placeholder="Start writing…"
-            />
+          <FormField label="Description" required error={fieldErrors.description} hint="Toolbar for formatting; use source mode for raw markdown / MDX.">
+            <div id="article-description" tabIndex={-1} className={fieldErrors.description ? 'is-invalid' : undefined}>
+              <ArticleMdxEditor
+                key={isEdit ? `${id}-${contentEditorKey}` : 'new-article'}
+                markdown={form.description}
+                onChange={(md) => {
+                  setFieldErrors((current) => ({ ...current, description: undefined }))
+                  setForm((p) => ({ ...p, description: md }))
+                }}
+                placeholder="Start writing…"
+              />
+            </div>
           </FormField>
 
           <h3 style={{ margin: '20px 0 12px', fontSize: 15 }}>Cover image</h3>
