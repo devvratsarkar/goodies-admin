@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil, RefreshCw } from 'lucide-react'
 import { exchangeRatesApi } from '../api/endpoints'
@@ -49,12 +50,14 @@ export function ExchangeRates() {
   const [form, setForm] = useState<FormState>(initialForm)
   const [modalError, setModalError] = useState('')
   const [togglingId, setTogglingId] = useState('')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
-  const load = () => {
+  const load = (term = debouncedSearch) => {
     setLoading(true)
     setError('')
     exchangeRatesApi
-      .getAll()
+      .getAll({ search: term.trim() || undefined })
       .then((res) => {
         const payload = res.data?.data
         const rows = Array.isArray(payload?.rates) ? payload.rates : []
@@ -67,8 +70,9 @@ export function ExchangeRates() {
   }
 
   useEffect(() => {
-    load()
-  }, [])
+    load(debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
 
   const openEdit = (row: ExchangeRate) => {
     setEditingId(row._id)
@@ -216,7 +220,7 @@ export function ExchangeRates() {
    
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
@@ -240,7 +244,12 @@ export function ExchangeRates() {
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
-      <DataTable data={data} columns={columns} searchPlaceholder="Search currency..." />
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search currency..."
+        serverSearch={{ value: search, onChange: setSearch }}
+      />
 
       {modal && (
         <Modal title="Update Exchange Rate" onClose={closeModal}>

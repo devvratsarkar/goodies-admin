@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { colorsApi } from '../api/endpoints'
@@ -39,12 +40,14 @@ export function Colors() {
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState<FormState>(initialForm)
   const [modalError, setModalError] = useState('')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
 
-  const load = () => {
+  const load = (term = debouncedSearch) => {
     setLoading(true)
     setError('')
     colorsApi
-      .getAll()
+      .getAll({ search: term.trim() || undefined })
       .then((res) => {
         const body = res.data as { data?: Color[] | { list?: Color[] } }
         const list = Array.isArray(body.data)
@@ -59,8 +62,9 @@ export function Colors() {
   }
 
   useEffect(() => {
-    load()
-  }, [])
+    load(debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
 
   const openEdit = (row: Color) => {
     setModalError('')
@@ -173,7 +177,7 @@ export function Colors() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   return (
     <>
@@ -188,7 +192,12 @@ export function Colors() {
       </div>
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      <DataTable data={data} columns={columns} searchPlaceholder="Search colors..." />
+      <DataTable
+        data={data}
+        columns={columns}
+        searchPlaceholder="Search colors..."
+        serverSearch={{ value: search, onChange: setSearch }}
+      />
 
       {modal && (
         <Modal title={modal === 'create' ? 'Create Color' : 'Update Color'} onClose={closeModal}>

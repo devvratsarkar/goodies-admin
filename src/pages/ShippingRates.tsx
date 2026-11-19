@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import type { ColumnDef } from '@tanstack/react-table'
 import { ChevronDown, ChevronRight, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { shippingRatesApi, shippingZonesApi } from '../api/endpoints'
@@ -278,11 +279,18 @@ export function ShippingRates() {
   const [countryInput, setCountryInput] = useState('')
   const [openContinents, setOpenContinents] = useState<Set<string>>(new Set())
   const [modalError, setModalError] = useState('')
+  const [zoneSearch, setZoneSearch] = useState('')
+  const [rateSearch, setRateSearch] = useState('')
+  const debouncedZoneSearch = useDebouncedValue(zoneSearch, 350)
+  const debouncedRateSearch = useDebouncedValue(rateSearch, 350)
 
-  const load = () => {
+  const load = (zoneTerm = debouncedZoneSearch, rateTerm = debouncedRateSearch) => {
     setLoading(true)
     setError('')
-    Promise.all([shippingZonesApi.getAll(), shippingRatesApi.getAll()])
+    Promise.all([
+      shippingZonesApi.getAll({ search: zoneTerm.trim() || undefined }),
+      shippingRatesApi.getAll({ search: rateTerm.trim() || undefined }),
+    ])
       .then(([zoneRes, rateRes]) => {
         setZones(toArray<ShippingZone>(zoneRes.data))
         setRates(toArray<ShippingRate>(rateRes.data))
@@ -292,8 +300,9 @@ export function ShippingRates() {
   }
 
   useEffect(() => {
-    load()
-  }, [])
+    load(debouncedZoneSearch, debouncedRateSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedZoneSearch, debouncedRateSearch])
 
   const closeModal = () => {
     setModal(null)
@@ -696,7 +705,9 @@ export function ShippingRates() {
     },
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && zones.length === 0 && rates.length === 0 && !zoneSearch && !rateSearch) {
+    return <div className="page-loading">Loading...</div>
+  }
 
   return (
     <>
@@ -731,9 +742,21 @@ export function ShippingRates() {
       {success && <div className="alert alert-success">{success}</div>}
 
       {tab === 'zones' ? (
-        <DataTable className="shipping-table" data={zones} columns={zoneColumns} searchPlaceholder="Search shipping zones..." />
+        <DataTable
+          className="shipping-table"
+          data={zones}
+          columns={zoneColumns}
+          searchPlaceholder="Search shipping zones..."
+          serverSearch={{ value: zoneSearch, onChange: setZoneSearch }}
+        />
       ) : (
-        <DataTable className="shipping-table" data={rates} columns={rateColumns} searchPlaceholder="Search shipping rates..." />
+        <DataTable
+          className="shipping-table"
+          data={rates}
+          columns={rateColumns}
+          searchPlaceholder="Search shipping rates..."
+          serverSearch={{ value: rateSearch, onChange: setRateSearch }}
+        />
       )}
 
       {modal === 'zone' && (

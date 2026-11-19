@@ -8,6 +8,7 @@ import type { ProductReview, ProductReviewProduct } from '../types/api'
 import { DataTable } from '../components/ui/DataTable'
 import { Modal } from '../components/ui/Modal'
 import { useModuleCan } from '../components/rbac/useModuleCan'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected'
 
@@ -113,6 +114,8 @@ export function Reviews() {
   const { canEdit } = useModuleCan('reviews')
   const [data, setData] = useState<ProductReview[]>([])
   const [status, setStatus] = useState<StatusFilter>('all')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 350)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [actingId, setActingId] = useState('')
@@ -122,11 +125,11 @@ export function Reviews() {
     setLoading(true)
     setError('')
     reviewsApi
-      .getAll()
+      .getAll({ search: debouncedSearch.trim() || undefined })
       .then((res) => setData(reviewsFrom(res.data)))
       .catch((err) => setError(apiMessage(err, 'Failed to load reviews')))
       .finally(() => setLoading(false))
-  }, [])
+  }, [debouncedSearch])
 
   useEffect(() => {
     load()
@@ -291,7 +294,7 @@ export function Reviews() {
   
   ]
 
-  if (loading) return <div className="page-loading">Loading...</div>
+  if (loading && data.length === 0 && !search) return <div className="page-loading">Loading...</div>
 
   const viewed = viewReview
 
@@ -323,6 +326,7 @@ export function Reviews() {
         data={visibleRows}
         columns={columns}
         searchPlaceholder="Search product, customer, email, or review..."
+        serverSearch={{ value: search, onChange: setSearch }}
       />
 
       {viewed && (

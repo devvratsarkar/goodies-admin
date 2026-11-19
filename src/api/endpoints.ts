@@ -111,7 +111,14 @@ export const authApi = {
       },
     }),
   getRoleOptions: () => api.get<ApiResponse<{ _id: string; name: string }[]>>('/api/admin/get-all-role-options'),
-  getAllUsers: () => api.get<ApiResponse<CustomerUser[] | { users?: CustomerUser[] }>>('/get-all-users'),
+  getAllUsers: (params?: { search?: string; limit?: number }) =>
+    api.get<ApiResponse<CustomerUser[] | { users?: CustomerUser[] }>>('/get-all-users', {
+      params: {
+        page: 1,
+        limit: params?.limit ?? 500,
+        ...(params?.search ? { search: params.search } : {}),
+      },
+    }),
   exportUsers: () =>
     api.get('/export-user', {
       responseType: 'blob',
@@ -121,13 +128,14 @@ export const authApi = {
 }
 
 export const customersApi = {
-  getAll: (params?: { fromDate?: string; toDate?: string }) =>
+  getAll: (params?: { fromDate?: string; toDate?: string; search?: string }) =>
     api.get<ApiResponse<CustomerUser[] | { data?: CustomerUser[] }>>('/get-all-users', {
       params: {
         page: 1,
         limit: 500,
         ...(params?.fromDate ? { fromDate: params.fromDate } : {}),
         ...(params?.toDate ? { toDate: params.toDate } : {}),
+        ...(params?.search ? { search: params.search } : {}),
       },
     }),
   create: (data: FormData | {
@@ -195,7 +203,8 @@ export const serviceCategoriesApi = {
 
 // FAQs
 export const faqsApi = {
-  getAll: () => api.get<ApiResponse<FAQ[]>>('/faqs'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<FAQ[]>>('/faqs', { params: params?.search ? { search: params.search } : {} }),
   getById: (id: string) => api.get<ApiResponse<FAQ>>(`/faqs/${id}`),
   create: (data: Pick<FAQ, 'question' | 'answer'>) => api.post<ApiResponse<FAQ>>('/faqs', data),
   update: (id: string, data: Pick<FAQ, 'question' | 'answer'>) => api.put<ApiResponse<FAQ>>(`/faqs/${id}`, data),
@@ -247,7 +256,8 @@ export const brandsApi = {
 }
 
 export const colorsApi = {
-  getAll: () => api.get<ApiResponse<Color[]>>('/colors'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<Color[]>>('/colors', { params: params?.search ? { search: params.search } : {} }),
   getById: (id: string) => api.get<ApiResponse<Color>>(`/colors/${id}`),
   create: (data: Pick<Color, 'name' | 'code'> & { status: boolean }) =>
     api.post<ApiResponse<Color>>('/colors', data),
@@ -511,10 +521,12 @@ export const productsApi = {
 }
 
 export const contactUsApi = {
-  getAll: () =>
-    api
-      .get<ApiResponse<ContactUs[]>>('/all-contact-us')
-      .catch(() => api.get<ApiResponse<ContactUs[]>>('/api/admin/all-contact-us')),
+  getAll: (params?: { search?: string }) => {
+    const query = { params: params?.search ? { search: params.search } : undefined }
+    return api
+      .get<ApiResponse<ContactUs[]>>('/all-contact-us', query)
+      .catch(() => api.get<ApiResponse<ContactUs[]>>('/api/admin/all-contact-us', query))
+  },
 }
 
 export const accessApi = {
@@ -548,10 +560,12 @@ export const reviewsApi = {
 }
 
 export const subscribersApi = {
-  getAll: () =>
-    api
-      .get<ApiResponse<Subscriber[]>>('/all-subscriber')
-      .catch(() => api.get<ApiResponse<Subscriber[]>>('/api/admin/all-subscriber')),
+  getAll: (params?: { search?: string }) => {
+    const query = { params: params?.search ? { search: params.search } : undefined }
+    return api
+      .get<ApiResponse<Subscriber[]>>('/all-subscriber', query)
+      .catch(() => api.get<ApiResponse<Subscriber[]>>('/api/admin/all-subscriber', query))
+  },
 }
 
 export const ordersApi = {
@@ -675,7 +689,10 @@ export const orderCancellationApi = {
 }
 
 export const shippingZonesApi = {
-  getAll: () => api.get<ApiResponse<ShippingZone[]>>('/shipping-zones'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<ShippingZone[]>>('/shipping-zones', {
+      params: params?.search ? { search: params.search } : {},
+    }),
   getById: (id: string) => api.get<ApiResponse<ShippingZone>>(`/shipping-zones/${id}`),
   create: (data: { name: string; country: string[]; status: boolean }) =>
     api.post<ApiResponse<ShippingZone>>('/shipping-zones', data),
@@ -729,7 +746,10 @@ export const codMethodsApi = {
 }
 
 export const shippingRatesApi = {
-  getAll: () => api.get<ApiResponse<ShippingRate[]>>('/shipping-rates'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<ShippingRate[]>>('/shipping-rates', {
+      params: params?.search ? { search: params.search } : {},
+    }),
   getById: (id: string) => api.get<ApiResponse<ShippingRate>>(`/shipping-rates/${id}`),
   create: (data: ShippingRatePayload) => api.post<ApiResponse<ShippingRate>>('/shipping-rates', data),
   update: (id: string, data: ShippingRatePayload) =>
@@ -738,7 +758,10 @@ export const shippingRatesApi = {
 }
 
 export const emailNotificationsApi = {
-  getAll: () => api.get<ApiResponse<EmailNotificationSetting[]>>('/email-notifications'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<EmailNotificationSetting[]>>('/email-notifications', {
+      params: params?.search ? { search: params.search } : {},
+    }),
   getByKey: (key: string) =>
     api.get<ApiResponse<EmailNotificationSetting>>(`/email-notifications/${key}`),
   update: (
@@ -755,7 +778,10 @@ export const emailNotificationsApi = {
 }
 
 export const exchangeRatesApi = {
-  getAll: () => api.get<ApiResponse<ExchangeRateListData>>('/exchange-rates'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<ExchangeRateListData>>('/exchange-rates', {
+      params: params?.search ? { search: params.search } : {},
+    }),
   getById: (id: string) => api.get<ApiResponse<ExchangeRate>>(`/exchange-rates/${id}`),
   create: (data: { currency: string; rate: number; status?: boolean }) =>
     api.post<ApiResponse<ExchangeRate>>('/exchange-rates', data),
@@ -892,7 +918,10 @@ export const tokenMastersApi = {
 
 // Testimonial Masters
 export const testimonialMastersApi = {
-  getAll: () => api.get<ApiResponse<TestimonialMaster[]>>('/api/admin/testimonial-masters'),
+  getAll: (params?: { search?: string }) =>
+    api.get<ApiResponse<TestimonialMaster[]>>('/testimonial', {
+      params: params?.search ? { search: params.search } : {},
+    }),
   getById: (id: string) => api.get<ApiResponse<TestimonialMaster>>(`/api/admin/testimonial-masters/${id}`),
   create: (data: Partial<TestimonialMaster>) =>
     api.post<ApiResponse<TestimonialMaster>>('/api/admin/testimonial-masters', data),
