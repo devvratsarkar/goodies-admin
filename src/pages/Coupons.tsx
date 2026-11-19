@@ -4,6 +4,7 @@ import { Copy, History, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { couponsApi } from '../api/endpoints'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import { adminConfirm, confirmDeleteItem } from '../utils/adminConfirm'
 import { getApiErrorMessage } from '../utils/apiError'
 import { isoDateParam } from '../utils/dateQuery'
@@ -222,6 +223,14 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
   const [createForm, setCreateForm] = useState<CreateFormState>(initialCreateForm)
   const [updateForm, setUpdateForm] = useState<UpdateFormState>(initialUpdateForm)
   const [amountFieldErrors, setAmountFieldErrors] = useState<AmountErrors>({})
+  const [formError, setFormError] = useState('')
+  const [noticeRevision, setNoticeRevision] = useState(0)
+  const formNotice =
+    formError ||
+    (amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value
+      ? AMOUNT_ERROR
+      : '')
+  const formNoticeRef = useScrollToNotice(formNotice, noticeRevision)
   const [togglingId, setTogglingId] = useState('')
   const [restoringId, setRestoringId] = useState('')
   const discountFrom = isoDateParam(searchParams.get('fromDate'))
@@ -293,6 +302,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       is_auto_apply: Boolean(row.is_auto_apply),
     })
     setAmountFieldErrors({})
+    setFormError('')
     setModal('edit')
   }
 
@@ -310,6 +320,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       is_auto_apply: Boolean(row.is_auto_apply),
     })
     setAmountFieldErrors({})
+    setFormError('')
     setDuplicating(true)
     setModal('create')
   }
@@ -321,6 +332,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
     setCreateForm(initialCreateForm)
     setUpdateForm(initialUpdateForm)
     setAmountFieldErrors({})
+    setFormError('')
   }
 
   const handleCreate = async (event: React.FormEvent) => {
@@ -328,11 +340,12 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
     const errors = amountErrors(createForm)
     if (Object.keys(errors).length > 0) {
       setAmountFieldErrors(errors)
+      setNoticeRevision((current) => current + 1)
       return
     }
     setAmountFieldErrors({})
+    setFormError('')
     setSubmitting(true)
-    setError('')
     try {
       await couponsApi.create({
         coupon_code: createForm.coupon_code,
@@ -350,7 +363,8 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       closeModal()
       load()
     } catch (err) {
-      setError(getApiErrorMessage(err, duplicating ? 'Duplicate failed' : 'Create failed'))
+      setFormError(getApiErrorMessage(err, duplicating ? 'Duplicate failed' : 'Create failed'))
+      setNoticeRevision((current) => current + 1)
     } finally {
       setSubmitting(false)
     }
@@ -362,11 +376,12 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
     const errors = amountErrors(updateForm)
     if (Object.keys(errors).length > 0) {
       setAmountFieldErrors(errors)
+      setNoticeRevision((current) => current + 1)
       return
     }
     setAmountFieldErrors({})
+    setFormError('')
     setSubmitting(true)
-    setError('')
     try {
       await couponsApi.update(editingId, {
         coupon_code: updateForm.coupon_code,
@@ -384,8 +399,9 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       showSuccess('Coupon updated')
       closeModal()
       load()
-    } catch {
-      setError('Update failed')
+    } catch (err) {
+      setFormError(getApiErrorMessage(err, 'Update failed'))
+      setNoticeRevision((current) => current + 1)
     } finally {
       setSubmitting(false)
     }
@@ -750,6 +766,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
                 setDuplicating(false)
                 setCreateForm(initialCreateForm)
                 setAmountFieldErrors({})
+                setFormError('')
                 setModal('create')
               }}
             >
@@ -795,11 +812,11 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       <div className="card" style={{ padding: 14, marginBottom: 12 }}>
         <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Start date from</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Start date </div>
             <input type="date" className="input" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Start date to</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>End date </div>
             <input type="date" className="input" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div>
@@ -868,8 +885,13 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       {!trash && modal === 'create' && (
         <Modal title={duplicating ? 'Duplicate coupon' : 'Create Coupon'} onClose={closeModal}>
           <form onSubmit={handleCreate}>
-            {(amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
-              <div className="alert alert-error">{AMOUNT_ERROR}</div>
+            {(formError || amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
+              <div ref={formNoticeRef}>
+                {formError && <div className="alert alert-error">{formError}</div>}
+                {(amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
+                  <div className="alert alert-error">{AMOUNT_ERROR}</div>
+                )}
+              </div>
             )}
             <FormField label="Coupon Code" required>
               <input
@@ -992,8 +1014,13 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       {!trash && modal === 'edit' && (
         <Modal title="Update Coupon" onClose={closeModal}>
           <form onSubmit={handleUpdate}>
-            {(amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
-              <div className="alert alert-error">{AMOUNT_ERROR}</div>
+            {(formError || amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
+              <div ref={formNoticeRef}>
+                {formError && <div className="alert alert-error">{formError}</div>}
+                {(amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
+                  <div className="alert alert-error">{AMOUNT_ERROR}</div>
+                )}
+              </div>
             )}
             <FormField label="Coupon Code" required>
               <input
