@@ -90,6 +90,15 @@ const formatMoney = (currency: string | undefined, amount: number) => {
   return `${currency || 'GBP'} ${amount.toFixed(2)}`
 }
 
+function storeProductUrl(slug?: string) {
+  const origin =
+    (import.meta.env.VITE_STORE_URL as string | undefined)?.replace(/\/$/, '') ||
+    'https://goodies-jade.vercel.app'
+  const path = (slug || '').trim()
+  if (!path) return ''
+  return `${origin}/product/${encodeURIComponent(path)}`
+}
+
 const statusKey = (value?: string | null) =>
   String(value || '')
     .trim()
@@ -128,6 +137,15 @@ const paymentStatusClass = (value?: string | null) => {
 const amountOf = (value: unknown) => {
   const amount = Number(value || 0)
   return Number.isFinite(amount) ? amount : 0
+}
+
+type BundleOrderItem = {
+  product_id?: string | null
+  title?: string | null
+  sku?: string | null
+  thumbnail?: string | null
+  quantity?: number
+  variant?: string | null
 }
 
 function OrderTotals({ order, currency }: { order: OrderDetail | null; currency: string }) {
@@ -488,7 +506,9 @@ export function OrderDetails() {
               </thead>
               <tbody>
                 {items.map((item, idx) => {
-                  const product = (item as { product_id?: { _id?: string; title?: string; thumbnail?: string; images?: string[] } }).product_id
+                  const product = (item as { product_id?: { _id?: string; title?: string; slug?: string; thumbnail?: string; images?: string[] } }).product_id
+                  const storeUrl = storeProductUrl(product?.slug)
+                  const productName = product?.title || (item as { product_name?: string }).product_name || '-'
                   const quantity = Number((item as { quantity?: number }).quantity || 0)
                   const unitPrice = Number((item as { single_price?: number; selling_price?: number; price?: number }).single_price
                     || (item as { single_price?: number; selling_price?: number; price?: number }).selling_price
@@ -502,16 +522,27 @@ export function OrderDetails() {
                   const selectedSize = (item as { selected_size?: string }).selected_size
                   const previewImage = product?.thumbnail || product?.images?.[0]
                   const cancellation = (item as { cancellation?: { request_id?: string; status?: string; refund_status?: string; full_order?: boolean } | null }).cancellation
+                  const bundleItems = Array.isArray((item as { bundle_items?: BundleOrderItem[] }).bundle_items)
+                    ? (item as { bundle_items?: BundleOrderItem[] }).bundle_items || []
+                    : []
+                  const freeQuantity = Number((item as { bogo_free_quantity?: number }).bogo_free_quantity || 0)
+                  const freeLabel = freeQuantity > 0
+                    ? freeQuantity >= quantity
+                      ? 'Free'
+                      : `${freeQuantity} free`
+                    : ''
                   return (
-                    <tr key={`${idx}-${product?.title || 'item'}`}>
+                    <tr key={`${idx}-${productName}`}>
                       <td>
                         <div className="order-item-product">
                           {previewImage ? (
-                            <img src={previewImage} alt={product?.title || 'product'} className="order-item-product-image" />
+                            <img src={previewImage} alt={productName} className="order-item-product-image" />
                           ) : null}
                           <div>
-                            <span className="order-item-product-title">{product?.title || '-'}</span>
+                            <span className="order-item-product-title">{productName}</span>
                             <div className="order-item-product-title-row">
+                              {freeLabel ? <span className="order-item-free-chip">{freeLabel}</span> : null}
+                              {bundleItems.length > 0 ? <span className="order-item-bundle-chip">Bundle</span> : null}
                               {cancellation ? (
                                 <button
                                   type="button"
@@ -528,15 +559,37 @@ export function OrderDetails() {
                                 </button>
                               ) : null}
                             </div>
-                            {(item as { product_id?: { _id?: string } }).product_id?._id ? (
+                            {storeUrl ? (
                               <a
-                                href={`/products/${(item as { product_id?: { _id?: string } }).product_id?._id}`}
+                                href={storeUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="order-item-product-link"
                               >
                                 View product
                               </a>
+                            ) : null}
+                            {bundleItems.length > 0 ? (
+                              <div className="order-bundle-items">
+                                <div className="order-bundle-items__label">In this bundle</div>
+                                <ul>
+                                  {bundleItems.map((child, childIndex) => (
+                                    <li key={`${child.product_id || child.title || 'item'}-${childIndex}`}>
+                                      {child.thumbnail ? (
+                                        <img src={child.thumbnail} alt="" />
+                                      ) : (
+                                        <span className="order-bundle-items__thumb" />
+                                      )}
+                                      <span>
+                                        {child.title || 'Product'}
+                                        {child.variant ? ` · ${child.variant}` : ''}
+                                        {child.sku ? ` · ${child.sku}` : ''}
+                                      </span>
+                                      <span className="order-bundle-items__qty">× {child.quantity || 1}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
                             ) : null}
                           </div>
                         </div>
@@ -545,7 +598,10 @@ export function OrderDetails() {
                       <td>{[selectedColor, selectedSize].filter(Boolean).join(' / ') || '-'}</td>
                       <td>{quantity}</td>
                       <td>{formatMoney(currency, unitPrice)}</td>
-                      <td>{formatMoney(currency, rowTotal)}</td>
+                      <td>
+                        {formatMoney(currency, rowTotal)}
+                        {freeLabel ? <span className="order-item-free-note">{freeLabel}</span> : null}
+                      </td>
                     </tr>
                   )
                 })}
