@@ -812,11 +812,11 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
       <div className="card" style={{ padding: 14, marginBottom: 12 }}>
         <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Start date </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>From date </div>
             <input type="date" className="input" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
           </div>
           <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>End date </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>To date </div>
             <input type="date" className="input" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div>
