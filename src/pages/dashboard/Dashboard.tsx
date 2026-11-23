@@ -116,12 +116,16 @@ function groupParam(value: string | null): TimeMode {
 
 export function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const fromDate = isoDateParam(searchParams.get('fromDate'))
-  const toDate = isoDateParam(searchParams.get('toDate'))
+  const fromParam = isoDateParam(searchParams.get('fromDate'))
+  const toParam = isoDateParam(searchParams.get('toDate'))
+  const fromDate = getDateFilterError(fromParam, '') ? '' : fromParam
+  const toDate = getDateFilterError(toParam, '') ? '' : toParam
   const timeMode = groupParam(searchParams.get('group'))
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [fromInput, setFromInput] = useState(fromParam)
+  const [toInput, setToInput] = useState(toParam)
   const today = todayIso()
 
   const updateFilters = (next: { fromDate?: string; toDate?: string; timeMode?: TimeMode }) => {
@@ -140,17 +144,28 @@ export function Dashboard() {
     }, { replace: true })
   }
 
-  const bothDatesSelected = Boolean(fromDate && toDate)
-  const dateError = getDateFilterError(fromDate, toDate)
-  const rangeReady = bothDatesSelected && !dateError
-  const hasDateFilter = Boolean(fromDate || toDate)
+  const saveDates = (from: string, to: string) => {
+    setFromInput(from)
+    setToInput(to)
+    if (getDateFilterError(from, to)) return
+    if (Boolean(from) !== Boolean(to)) return
+    if (from === fromDate && to === toDate) return
+    updateFilters({ fromDate: from, toDate: to })
+  }
+
+  const dateError = getDateFilterError(fromInput, toInput)
+  const rangeReady = Boolean(fromDate && toDate) && !getDateFilterError(fromDate, toDate)
+  const hasDateFilter = Boolean(fromInput || toInput || fromDate || toDate)
   const monthly = timeMode === 'monthly'
-  const canQuery = (!fromDate && !toDate) || rangeReady
+  const canQuery = !fromDate || !toDate || rangeReady
   const reportFrom = rangeReady ? fromDate : undefined
   const reportTo = rangeReady ? toDate : undefined
 
   useEffect(() => {
-    if (!canQuery) return
+    if (!canQuery) {
+      setLoading(false)
+      return
+    }
     let cancelled = false
     setLoading(true)
     setLoadError('')
@@ -206,6 +221,8 @@ export function Dashboard() {
   const toMin = fromIsBound ? fromDate : undefined
 
   const clearFilters = () => {
+    setFromInput('')
+    setToInput('')
     updateFilters({ fromDate: '', toDate: '', timeMode: 'monthly' })
   }
   const listQuery = (path: string, extra?: Record<string, string>) => {
@@ -240,10 +257,10 @@ export function Dashboard() {
               <input
                 type="date"
                 className={`input${dateError?.from ? ' is-invalid' : ''}`}
-                value={fromDate}
+                value={fromInput}
                 max={fromMax}
                 aria-invalid={dateError?.from || undefined}
-                onChange={(event) => updateFilters({ fromDate: event.target.value })}
+                onChange={(event) => saveDates(event.target.value, toInput)}
               />
             </label>
             <label className="dashboard-date-field">
@@ -251,11 +268,11 @@ export function Dashboard() {
               <input
                 type="date"
                 className={`input${dateError?.to ? ' is-invalid' : ''}`}
-                value={toDate}
+                value={toInput}
                 min={toMin}
                 max={today}
                 aria-invalid={dateError?.to || undefined}
-                onChange={(event) => updateFilters({ toDate: event.target.value })}
+                onChange={(event) => saveDates(fromInput, event.target.value)}
               />
             </label>
             {hasDateFilter || !monthly ? (
