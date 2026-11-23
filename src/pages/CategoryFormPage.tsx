@@ -6,6 +6,8 @@ import { revalidateStore } from '../api/revalidateStore'
 import { useScrollToNotice } from '../hooks/useScrollToNotice'
 import { ImageSourceField } from '../components/media/ImageSourceField'
 import { slugify } from '../utils/slugify'
+
+const categorySlug = (value: string, trim = true) => slugify(value, { trim, keepArabic: true })
 import type { Category, CategoryFaq, CategoryPayload } from '../types/api'
 import { SearchAndSocialCard } from '../components/products/SearchAndSocialCard'
 import { FormField } from '../components/ui/FormField'
@@ -212,7 +214,7 @@ export function CategoryFormPage() {
 
     const payload: CategoryPayload = {
       name: form.name,
-      slug: slugify(form.slug),
+      slug: categorySlug(form.slug),
       parent_category: form.parent_category || '',
       is_mega_menu: form.is_mega_menu,
       status: form.status,
@@ -336,7 +338,7 @@ export function CategoryFormPage() {
                   setError('')
                   setFieldErrors((current) => ({ ...current, name: undefined, slug: undefined }))
                   setForm((current) => {
-                    const slug = slugTouched && current.slug.trim() ? current.slug : slugify(name)
+                    const slug = slugTouched && current.slug.trim() ? current.slug : categorySlug(name)
                     return { ...current, name, slug }
                   })
                 }}
@@ -349,13 +351,13 @@ export function CategoryFormPage() {
                 className={`input${fieldErrors.slug ? ' is-invalid' : ''}`}
                 value={form.slug}
                 onChange={(e) => {
-                  const slug = slugify(e.target.value, { trim: false })
+                  const slug = categorySlug(e.target.value, false)
                   setError('')
                   setSlugTouched(slug.trim().length > 0)
                   setFieldErrors((current) => ({ ...current, slug: undefined }))
                   setForm((current) => ({ ...current, slug }))
                 }}
-                onBlur={() => setForm((current) => ({ ...current, slug: slugify(current.slug) }))}
+                onBlur={() => setForm((current) => ({ ...current, slug: categorySlug(current.slug) }))}
                 required
               />
             </FormField>
