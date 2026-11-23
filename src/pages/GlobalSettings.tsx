@@ -546,14 +546,6 @@ export function GlobalSettings() {
                   onChange={(e) => setField('google_tag_manager', e.target.value)}
                 />
               </FormField>
-              <FormField label="Microsoft Clarity" htmlFor="microsoft_clarity">
-                <input
-                  id="microsoft_clarity"
-                  className="input"
-                  value={form.microsoft_clarity}
-                  onChange={(e) => setField('microsoft_clarity', e.target.value)}
-                />
-              </FormField>
               <FormField label="Meta Pixel" htmlFor="meta_pixel">
                 <input
                   id="meta_pixel"
@@ -561,6 +553,15 @@ export function GlobalSettings() {
                   placeholder="123456789012345"
                   value={form.meta_pixel}
                   onChange={(e) => setField('meta_pixel', e.target.value)}
+                />
+              </FormField>
+              <FormField label="Meta domain verification" htmlFor="meta_domain_verification">
+                <input
+                  id="meta_domain_verification"
+                  className="input"
+                  placeholder="verification code"
+                  value={form.meta_domain_verification}
+                  onChange={(e) => setField('meta_domain_verification', e.target.value)}
                 />
               </FormField>
               <FormField label="TikTok Pixel" htmlFor="tiktok_pixel">
@@ -581,13 +582,12 @@ export function GlobalSettings() {
                   onChange={(e) => setField('snap_pixel', e.target.value)}
                 />
               </FormField>
-              <FormField label="Meta domain verification" htmlFor="meta_domain_verification">
+              <FormField label="Microsoft Clarity" htmlFor="microsoft_clarity">
                 <input
-                  id="meta_domain_verification"
+                  id="microsoft_clarity"
                   className="input"
-                  placeholder="verification code"
-                  value={form.meta_domain_verification}
-                  onChange={(e) => setField('meta_domain_verification', e.target.value)}
+                  value={form.microsoft_clarity}
+                  onChange={(e) => setField('microsoft_clarity', e.target.value)}
                 />
               </FormField>
             </div>
