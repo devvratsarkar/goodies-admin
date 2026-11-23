@@ -134,9 +134,9 @@ function buildProductSeo(form: ProductForm): SearchSocialValues {
 }
 
 const TEXT_LIMITS = {
-  short_description: 200,
-  description: 500,
-  custom_notes: 200,
+  short_description: 500,
+  description: 1000,
+  custom_notes: 500,
 } as const
 
 function limitText(previous: string, next: string, max: number) {

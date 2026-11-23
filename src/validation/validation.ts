@@ -69,9 +69,9 @@ export const addProductValidationSchema = Yup.object({
   title: Yup.string().trim().required('Title is required'),
   slug: Yup.string().trim().required('Slug is required'),
   categoryId: Yup.string().trim().required('Please select a category'),
-  short_description: textLimit('Short description', 200),
-  description: textLimit('Description', 500),
-  custom_notes: textLimit('Custom notes', 200),
+  short_description: textLimit('Short description', 500),
+  description: textLimit('Description', 1000),
+  custom_notes: textLimit('Custom notes', 500),
   weight: nonNegative('Weight'),
   max_selection: Yup.number().when('product_type', {
     is: 'bundle',
