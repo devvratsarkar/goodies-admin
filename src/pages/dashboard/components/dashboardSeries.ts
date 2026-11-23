@@ -31,7 +31,7 @@ export function parseIsoDate(iso: string): Date | null {
   const year = Number(match[1])
   const month = Number(match[2])
   const day = Number(match[3])
-  if (month < 1 || month > 12 || day < 1) return null
+  if (year < 1000 || month < 1 || month > 12 || day < 1) return null
   const date = new Date(year, month - 1, day)
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null
   return date
