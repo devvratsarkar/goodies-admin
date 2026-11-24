@@ -211,18 +211,28 @@ export function Products({ trash = false }: { trash?: boolean }) {
   const [success, setSuccess] = useState('')
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [togglingFlag, setTogglingFlag] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [visibility, setVisibility] = useState<Visibility>(trash ? 'trash' : 'all')
+  const [search, setSearch] = useState(() => searchParams.get('q') || '')
+  const [visibility, setVisibility] = useState<Visibility>(() => {
+    if (trash) return 'trash'
+    const value = searchParams.get('visibility')
+    return value === 'publish' || value === 'draft' || value === 'pending' ? value : 'all'
+  })
   const [visibilityCounts, setVisibilityCounts] = useState<VisibilityCounts>({})
   const [restoringId, setRestoringId] = useState<string | null>(null)
   const isTrash = trash || visibility === 'trash'
   const [status, setStatus] = useState('all')
   const [categoryId, setCategoryId] = useState(() => searchParams.get('categoryId') || '')
   const [sizeName, setSizeName] = useState(() => searchParams.get('size') || '')
-  const [productTypeFilter, setProductTypeFilter] = useState('all')
-  const [stockStatus, setStockStatus] = useState('all')
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
+  const [productTypeFilter, setProductTypeFilter] = useState(() => {
+    const value = searchParams.get('type')
+    return value === 'simple' || value === 'variable' || value === 'bundle' ? value : 'all'
+  })
+  const [stockStatus, setStockStatus] = useState(() => {
+    const value = searchParams.get('stock')
+    return value === 'in_stock' || value === 'out_of_stock' ? value : 'all'
+  })
+  const [minPrice, setMinPrice] = useState(() => searchParams.get('min') || '')
+  const [maxPrice, setMaxPrice] = useState(() => searchParams.get('max') || '')
   const [categories, setCategories] = useState<Category[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
   const [page, setPage] = useState(0)
@@ -231,42 +241,24 @@ export function Products({ trash = false }: { trash?: boolean }) {
   const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
-    setVisibility(trash ? 'trash' : 'all')
+    if (trash) setVisibility('trash')
+    else setVisibility((current) => (current === 'trash' ? 'all' : current))
     setPage(0)
   }, [trash])
 
+  // Keep filters in the URL so refresh restores them
   useEffect(() => {
-    const nextCategoryId = searchParams.get('categoryId') || ''
-    const nextSize = searchParams.get('size') || ''
-    setCategoryId((current) => {
-      if (current === nextCategoryId) return current
-      setPage(0)
-      return nextCategoryId
-    })
-    setSizeName((current) => {
-      if (current === nextSize) return current
-      setPage(0)
-      return nextSize
-    })
-  }, [searchParams])
-
-  const applyCategoryFilter = (nextCategoryId: string) => {
-    setCategoryId(nextCategoryId)
-    setPage(0)
-    const next = new URLSearchParams(searchParams)
-    if (nextCategoryId) next.set('categoryId', nextCategoryId)
-    else next.delete('categoryId')
-    setSearchParams(next, { replace: true })
-  }
-
-  const applySizeFilter = (nextSize: string) => {
-    setSizeName(nextSize)
-    setPage(0)
-    const next = new URLSearchParams(searchParams)
-    if (nextSize) next.set('size', nextSize)
-    else next.delete('size')
-    setSearchParams(next, { replace: true })
-  }
+    const next = new URLSearchParams()
+    if (search.trim()) next.set('q', search.trim())
+    if (!trash && visibility !== 'all' && visibility !== 'trash') next.set('visibility', visibility)
+    if (categoryId) next.set('categoryId', categoryId)
+    if (sizeName) next.set('size', sizeName)
+    if (productTypeFilter !== 'all') next.set('type', productTypeFilter)
+    if (stockStatus !== 'all') next.set('stock', stockStatus)
+    if (minPrice.trim()) next.set('min', minPrice.trim())
+    if (maxPrice.trim()) next.set('max', maxPrice.trim())
+    setSearchParams((prev) => (prev.toString() === next.toString() ? prev : next), { replace: true })
+  }, [search, visibility, categoryId, sizeName, productTypeFilter, stockStatus, minPrice, maxPrice, trash, setSearchParams])
 
   const debouncedSearch = useDebouncedValue(search, search.trim() ? 350 : 0)
   const debouncedMinPrice = useDebouncedValue(minPrice, 350)
@@ -452,27 +444,24 @@ export function Products({ trash = false }: { trash?: boolean }) {
     setMinPrice('')
     setMaxPrice('')
     setPage(0)
-    const next = new URLSearchParams(searchParams)
-    next.delete('categoryId')
-    next.delete('size')
-    setSearchParams(next, { replace: true })
   }
 
   const selectedCategory = categories.find((category) => category._id === categoryId)
   const selectedSize = sizes.find((size) => size.name.toLowerCase() === sizeName.toLowerCase())
   const chips: { key: string; label: string; clear: () => void }[] = []
+  if (search.trim()) chips.push({ key: 'search', label: `Search: ${search.trim()}`, clear: () => setSearch('') })
   if (!trash && visibility !== 'all') {
     const label = VISIBILITY_OPTIONS.find((option) => option.value === visibility)?.label ?? visibility
     chips.push({ key: 'visibility', label: `Visibility: ${label}`, clear: () => setVisibility('all') })
   }
   if (status !== 'all') chips.push({ key: 'status', label: `Status: ${STATUS_LABELS[status] ?? status}`, clear: () => setStatus('all') })
-  if (categoryId) chips.push({ key: 'category', label: `Category: ${selectedCategory?.name || 'Selected'}`, clear: () => applyCategoryFilter('') })
-  if (sizeName) chips.push({ key: 'size', label: `Size: ${(selectedSize?.name || sizeName).toUpperCase()}`, clear: () => applySizeFilter('') })
+  if (categoryId) chips.push({ key: 'category', label: `Category: ${selectedCategory?.name || 'Selected'}`, clear: () => setCategoryId('') })
+  if (sizeName) chips.push({ key: 'size', label: `Size: ${(selectedSize?.name || sizeName).toUpperCase()}`, clear: () => setSizeName('') })
   if (productTypeFilter !== 'all') chips.push({ key: 'type', label: `Type: ${TYPE_LABELS[productTypeFilter] ?? productTypeFilter}`, clear: () => setProductTypeFilter('all') })
   if (stockStatus !== 'all') chips.push({ key: 'stock', label: `Stock: ${STOCK_LABELS[stockStatus] ?? stockStatus}`, clear: () => setStockStatus('all') })
   if (minPrice.trim()) chips.push({ key: 'min', label: `Min: ${minPrice}`, clear: () => setMinPrice('') })
   if (maxPrice.trim()) chips.push({ key: 'max', label: `Max: ${maxPrice}`, clear: () => setMaxPrice('') })
-  const hasActiveFilters = chips.length > 0 || Boolean(search.trim())
+  const hasActiveFilters = chips.length > 0
 
   const columns: GridColDef[] = [
     {
@@ -834,13 +823,13 @@ export function Products({ trash = false }: { trash?: boolean }) {
             <option value="publish">Publish</option>
             <option value="draft">Draft</option>
           </select> */}
-          <select className="select" value={categoryId} onChange={(event) => applyCategoryFilter(event.target.value)}>
+          <select className="select" value={categoryId} onChange={(event) => { setCategoryId(event.target.value); setPage(0) }}>
             <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category._id} value={category._id}>{category.name}</option>
             ))}
           </select>
-          <select className="select" value={sizeName} onChange={(event) => applySizeFilter(event.target.value)}>
+          <select className="select" value={sizeName} onChange={(event) => { setSizeName(event.target.value); setPage(0) }}>
             <option value="">All sizes</option>
             {sizes.map((size) => (
               <option key={size._id} value={size.name}>{size.name.toUpperCase()}</option>
