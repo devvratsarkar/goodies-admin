@@ -1160,6 +1160,7 @@ export interface GlobalSettings {
   google_tag_manager?: string
   microsoft_clarity?: string
   meta_pixel?: string
+  meta_pixel_access_token?: string
   tiktok_pixel?: string
   snap_pixel?: string
   meta_domain_verification?: string
