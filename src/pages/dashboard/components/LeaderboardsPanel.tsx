@@ -9,13 +9,11 @@ function LeaderboardTable({
   nameLabel,
   rows,
   loading,
-  linkTo,
 }: {
   title: string
   nameLabel: string
   rows: DashboardLeaderboardRow[]
   loading: boolean
-  linkTo?: (row: DashboardLeaderboardRow) => string | null
 }) {
   return (
     <article className="dashboard-leaderboards__card">
@@ -39,7 +37,6 @@ function LeaderboardTable({
             ) : (
               rows.map((row, index) => {
                 const { name, nameAr } = splitBilingual(row.name)
-                const href = linkTo?.(row)
                 const label = (
                   <span className="dashboard-leaderboards__name">
                     <span dir="ltr">{name}</span>
@@ -48,7 +45,7 @@ function LeaderboardTable({
                 )
                 return (
                   <tr key={row._id ?? `row-${index}`}>
-                    <td>{href ? <Link to={href}>{label}</Link> : label}</td>
+                    <td><Link to={`${import.meta.env.VITE_STORE_URL}/${nameLabel === 'Category' ? 'product-category' : 'product'}/${row.slug}`} target="_blank" rel="noopener noreferrer">{label}</Link></td>
                     <td>{formatCount(row.items_sold)}</td>
                     <td>{formatAed(row.net_sales)}</td>
                   </tr>
@@ -100,7 +97,6 @@ export function LeaderboardsPanel({ fromDate, toDate, paused }: ReportPanelProps
           nameLabel="Product"
           rows={data?.top_products ?? []}
           loading={loading}
-          linkTo={(row) => (row._id ? `/products/${row._id}` : null)}
         />
       </div>
     </div>

@@ -749,6 +749,7 @@ export interface DashboardLeaderboardRow {
   _id: string | null
   name: string
   items_sold: number
+  slug: string
   net_sales: number
 }
 
@@ -761,6 +762,7 @@ export interface DashboardLeaderboards {
 export interface DashboardProductRow {
   product_id: string | null
   title: string
+  slug: string
   sku: string | null
   items_sold: number
   net_sales: number

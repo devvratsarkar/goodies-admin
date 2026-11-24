@@ -127,7 +127,7 @@ export function ProductsReportPanel({ fromDate, toDate, paused }: ReportPanelPro
         minWidth: 220,
         renderCell: ({ row }) => {
           const label = <BilingualLabel value={row.title} />
-          return row.product_id && row.status !== 'deleted' ? <Link to={`/products/${row.product_id}`}>{label}</Link> : label
+          return row.product_id && row.status !== 'deleted' ? <Link to={`${import.meta.env.VITE_STORE_URL}/product/${row.slug}`} target="_blank" rel="noopener noreferrer">{label}</Link> : label
         },
       },
       {
