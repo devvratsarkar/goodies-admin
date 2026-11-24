@@ -64,8 +64,8 @@ const AMOUNT_ERROR = 'Enter some amount'
 function amountErrors(form: { value: number; no_coupon: number; minimum_cart_value: number }): AmountErrors {
   const errors: AmountErrors = {}
   if (!(Number(form.value) > 0)) errors.value = AMOUNT_ERROR
-  if (!(Number(form.no_coupon) > 0)) errors.no_coupon = AMOUNT_ERROR
-  if (!(Number(form.minimum_cart_value) > 0)) errors.minimum_cart_value = AMOUNT_ERROR
+  if (!(Number(form.no_coupon) > 0)) errors.no_coupon = "Enter some number of coupons"
+  if (!(Number(form.minimum_cart_value) > 0)) errors.minimum_cart_value = "Enter some minimum cart value"
   return errors
 }
 
@@ -889,7 +889,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
               <div ref={formNoticeRef}>
                 {formError && <div className="alert alert-error">{formError}</div>}
                 {(amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
-                  <div className="alert alert-error">{AMOUNT_ERROR}</div>
+                  <div className="alert alert-error">{ amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value }</div>
                 )}
               </div>
             )}
@@ -1018,7 +1018,7 @@ export function Coupons({ trash = false }: { trash?: boolean }) {
               <div ref={formNoticeRef}>
                 {formError && <div className="alert alert-error">{formError}</div>}
                 {(amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value) && (
-                  <div className="alert alert-error">{AMOUNT_ERROR}</div>
+                  <div className="alert alert-error">{ amountFieldErrors.value || amountFieldErrors.no_coupon || amountFieldErrors.minimum_cart_value }</div>
                 )}
               </div>
             )}
