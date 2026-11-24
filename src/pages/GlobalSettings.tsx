@@ -47,6 +47,7 @@ function emptyForm(): Record<string, string> {
     google_tag_manager: '',
     microsoft_clarity: '',
     meta_pixel: '',
+    meta_pixel_access_token: '',
     tiktok_pixel: '',
     snap_pixel: '',
     meta_domain_verification: '',
@@ -103,6 +104,7 @@ function applySettingsToForm(g: GlobalSettingsData): Record<string, string> {
     google_tag_manager: g.google_tag_manager ?? '',
     microsoft_clarity: g.microsoft_clarity ?? '',
     meta_pixel: g.meta_pixel ?? '',
+    meta_pixel_access_token: g.meta_pixel_access_token ?? '',
     tiktok_pixel: g.tiktok_pixel ?? '',
     snap_pixel: g.snap_pixel ?? '',
     meta_domain_verification: g.meta_domain_verification ?? '',
@@ -172,6 +174,7 @@ function buildUpdatePayload(
     google_tag_manager: q('google_tag_manager'),
     microsoft_clarity: q('microsoft_clarity'),
     meta_pixel: q('meta_pixel'),
+    meta_pixel_access_token: q('meta_pixel_access_token'),
     tiktok_pixel: q('tiktok_pixel'),
     snap_pixel: q('snap_pixel'),
     meta_domain_verification: q('meta_domain_verification'),
@@ -377,384 +380,399 @@ export function GlobalSettings() {
         </div>
       </div>
 
-        {(error || message) ? (
-          <div ref={noticeRef}>
-            {error && <div className="alert alert-error global-settings-alert">{error}</div>}
-            {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+      {(error || message) ? (
+        <div ref={noticeRef}>
+          {error && <div className="alert alert-error global-settings-alert">{error}</div>}
+          {message && <div className="alert alert-success global-settings-alert">{message}</div>}
+        </div>
+      ) : null}
+
+      <div className="card product-form global-settings-form">
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">Brand</h2>
+            <p className="product-form-section__hint">Store name and the short description shown under the logo in the footer.</p>
           </div>
-        ) : null}
-
-        <div className="card product-form global-settings-form">
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">Brand</h2>
-              <p className="product-form-section__hint">Store name and the short description shown under the logo in the footer.</p>
-            </div>
-            <div className="brand-copy">
-              <FormField label="Platform name" htmlFor="platformName">
-                <input
-                  id="platformName"
-                  className="input brand-copy__name"
-                  value={form.platformName}
-                  onChange={(e) => setField('platformName', e.target.value)}
-                  placeholder="Goodies"
-                />
-              </FormField>
-              <FormField label="Platform description" htmlFor="platformDescription">
-                <textarea
-                  id="platformDescription"
-                  className="textarea brand-copy__description"
-                  rows={4}
-                  value={form.platformDescription}
-                  onChange={(e) => setField('platformDescription', e.target.value)}
-                  placeholder="A short line about the store."
-                />
-              </FormField>
-            </div>
-            <div className="form-row">
-              <ImageSourceField
-                label="Main logo"
-                hint="Leave empty to keep the current image"
-                file={files.logo ?? null}
-                url={fileUrls.logo ?? ''}
-                existing={existingImage('logo')}
-                onFileChange={(file) => setFile('logo', file)}
-                onUrlChange={(url) => setFileUrl('logo', url)}
-                onExistingChange={() => clearExistingImage('logo')}
-              />
-              <ImageSourceField
-                label="Favicon / icon"
-                hint="Leave empty to keep the current image"
-                file={files.icon_image ?? null}
-                url={fileUrls.icon_image ?? ''}
-                existing={existingImage('icon_image')}
-                onFileChange={(file) => setFile('icon_image', file)}
-                onUrlChange={(url) => setFileUrl('icon_image', url)}
-                onExistingChange={() => clearExistingImage('icon_image')}
-              />
-            </div>
-          </section>
-
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">Homepage</h2>
-              <p className="product-form-section__hint">Announcement bar text and the banners at the top of the home page.</p>
-            </div>
-            <div className="global-settings-grid-2">
-              <FormField label="Header text first" htmlFor="header_text_first">
-                <input
-                  id="header_text_first"
-                  className="input"
-                  value={form.header_text_first}
-                  onChange={(e) => setField('header_text_first', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Header text second" htmlFor="header_text_second">
-                <input
-                  id="header_text_second"
-                  className="input"
-                  value={form.header_text_second}
-                  onChange={(e) => setField('header_text_second', e.target.value)}
-                />
-              </FormField>
-            </div>
-            <div className="form-row">
-              <ImageSourceField
-                label="Home page banner"
-                hint="Leave empty to keep the current image"
-                file={files.home_page_banner ?? null}
-                url={fileUrls.home_page_banner ?? ''}
-                existing={existingImage('home_page_banner')}
-                onFileChange={(file) => setFile('home_page_banner', file)}
-                onUrlChange={(url) => setFileUrl('home_page_banner', url)}
-                onExistingChange={() => clearExistingImage('home_page_banner')}
-              />
-              <ImageSourceField
-                label="Home page banner (mobile)"
-                hint="Leave empty to keep the current image"
-                file={files.home_page_banner_mobile ?? null}
-                url={fileUrls.home_page_banner_mobile ?? ''}
-                existing={existingImage('home_page_banner_mobile')}
-                onFileChange={(file) => setFile('home_page_banner_mobile', file)}
-                onUrlChange={(url) => setFileUrl('home_page_banner_mobile', url)}
-                onExistingChange={() => clearExistingImage('home_page_banner_mobile')}
-              />
-            </div>
-          </section>
-
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">Contact details</h2>
-            </div>
-            <div className="global-settings-grid-2">
-              <FormField label="Email" htmlFor="email">
-                <input
-                  id="email"
-                  type="email"
-                  className="input"
-                  value={form.email}
-                  onChange={(e) => setField('email', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Phone" htmlFor="phone">
-                <input id="phone" className="input" value={form.phone} onChange={(e) => setField('phone', e.target.value)} />
-              </FormField>
-              <FormField label="WhatsApp number" htmlFor="whatsapp_number">
-                <input
-                  id="whatsapp_number"
-                  className="input"
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="+971 50 000 0000"
-                  value={form.whatsapp_number}
-                  onChange={(e) => setField('whatsapp_number', e.target.value)}
-                />
-              </FormField>
-            </div>
-            <FormField label="Address" htmlFor="address">
-              <textarea
-                id="address"
-                className="textarea"
-                rows={2}
-                value={form.address}
-                onChange={(e) => setField('address', e.target.value)}
+          <div className="brand-copy">
+            <FormField label="Platform name" htmlFor="platformName">
+              <input
+                id="platformName"
+                className="input brand-copy__name"
+                value={form.platformName}
+                onChange={(e) => setField('platformName', e.target.value)}
+                placeholder="Goodies"
               />
             </FormField>
-          </section>
-
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">Analytics &amp; tags</h2>
-            </div>
-            <div className="global-settings-grid-2">
-              <FormField label="Google Analytics ID" htmlFor="google_analytics_id">
-                <input
-                  id="google_analytics_id"
-                  className="input"
-                  placeholder="G-XXXXXXX"
-                  value={form.google_analytics_id}
-                  onChange={(e) => setField('google_analytics_id', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Google Tag Manager" htmlFor="google_tag_manager">
-                <input
-                  id="google_tag_manager"
-                  className="input"
-                  placeholder="GTM-XXXXXX"
-                  value={form.google_tag_manager}
-                  onChange={(e) => setField('google_tag_manager', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Meta Pixel" htmlFor="meta_pixel">
-                <input
-                  id="meta_pixel"
-                  className="input"
-                  placeholder="123456789012345"
-                  value={form.meta_pixel}
-                  onChange={(e) => setField('meta_pixel', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Meta domain verification" htmlFor="meta_domain_verification">
-                <input
-                  id="meta_domain_verification"
-                  className="input"
-                  placeholder="verification code"
-                  value={form.meta_domain_verification}
-                  onChange={(e) => setField('meta_domain_verification', e.target.value)}
-                />
-              </FormField>
-              <FormField label="TikTok Pixel" htmlFor="tiktok_pixel">
-                <input
-                  id="tiktok_pixel"
-                  className="input"
-                  placeholder="CXXXXXXXXXXXXXXX"
-                  value={form.tiktok_pixel}
-                  onChange={(e) => setField('tiktok_pixel', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Snap Pixel" htmlFor="snap_pixel">
-                <input
-                  id="snap_pixel"
-                  className="input"
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                  value={form.snap_pixel}
-                  onChange={(e) => setField('snap_pixel', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Microsoft Clarity" htmlFor="microsoft_clarity">
-                <input
-                  id="microsoft_clarity"
-                  className="input"
-                  value={form.microsoft_clarity}
-                  onChange={(e) => setField('microsoft_clarity', e.target.value)}
-                />
-              </FormField>
-            </div>
-          </section>
-
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">Social links</h2>
-            </div>
-            <div className="global-settings-grid-3">
-              <FormField label="Instagram" htmlFor="instagram_link">
-                <input
-                  id="instagram_link"
-                  type="url"
-                  className="input"
-                  value={form.instagram_link}
-                  onChange={(e) => setField('instagram_link', e.target.value)}
-                />
-              </FormField>
-              <FormField label="X (Twitter)" htmlFor="x_link">
-                <input
-                  id="x_link"
-                  type="url"
-                  className="input"
-                  value={form.x_link}
-                  onChange={(e) => setField('x_link', e.target.value)}
-                />
-              </FormField>
-              <FormField label="LinkedIn" htmlFor="linkdin_link">
-                <input
-                  id="linkdin_link"
-                  type="url"
-                  className="input"
-                  value={form.linkdin_link}
-                  onChange={(e) => setField('linkdin_link', e.target.value)}
-                />
-              </FormField>
-              <FormField label="YouTube" htmlFor="youtube_link">
-                <input
-                  id="youtube_link"
-                  type="url"
-                  className="input"
-                  value={form.youtube_link}
-                  onChange={(e) => setField('youtube_link', e.target.value)}
-                />
-              </FormField>
-              <FormField label="Facebook" htmlFor="facebook_link">
-                <input
-                  id="facebook_link"
-                  type="url"
-                  className="input"
-                  value={form.facebook_link}
-                  onChange={(e) => setField('facebook_link', e.target.value)}
-                />
-              </FormField>
-              <FormField label="TikTok" htmlFor="tiktok_link">
-                <input
-                  id="tiktok_link"
-                  type="url"
-                  className="input"
-                  value={form.tiktok_link}
-                  onChange={(e) => setField('tiktok_link', e.target.value)}
-                />
-              </FormField>
-            </div>
-          </section>
-
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">
-                <label htmlFor="tax">Tax(%)</label>
-              </h2>
-            </div>
-            <input
-              id="tax"
-              type="number"
-              min="0"
-              step="0.01"
-              className="input tax-input"
-              placeholder="0"
-              aria-label="Tax"
-              value={form.tax}
-              onChange={(e) => setField('tax', e.target.value)}
+            <FormField label="Platform description" htmlFor="platformDescription">
+              <textarea
+                id="platformDescription"
+                className="textarea brand-copy__description"
+                rows={4}
+                value={form.platformDescription}
+                onChange={(e) => setField('platformDescription', e.target.value)}
+                placeholder="A short line about the store."
+              />
+            </FormField>
+          </div>
+          <div className="form-row">
+            <ImageSourceField
+              label="Main logo"
+              hint="Leave empty to keep the current image"
+              file={files.logo ?? null}
+              url={fileUrls.logo ?? ''}
+              existing={existingImage('logo')}
+              onFileChange={(file) => setFile('logo', file)}
+              onUrlChange={(url) => setFileUrl('logo', url)}
+              onExistingChange={() => clearExistingImage('logo')}
             />
-          </section>
+            <ImageSourceField
+              label="Favicon / icon"
+              hint="Leave empty to keep the current image"
+              file={files.icon_image ?? null}
+              url={fileUrls.icon_image ?? ''}
+              existing={existingImage('icon_image')}
+              onFileChange={(file) => setFile('icon_image', file)}
+              onUrlChange={(url) => setFileUrl('icon_image', url)}
+              onExistingChange={() => clearExistingImage('icon_image')}
+            />
+          </div>
+        </section>
 
-          <SearchAndSocialCard
-            values={{
-              meta_title: form.meta_title,
-              meta_description: form.meta_description,
-              meta_keywords: form.meta_keywords,
-              og_title: form.og_title,
-              og_description: form.og_description,
-              twitter_title: form.twitter_title,
-              twitter_description: form.twitter_description,
-              json_ld: form.schema_markup,
-            }}
-            onChange={(key, value) => setField(key === 'json_ld' ? 'schema_markup' : key, value)}
-            isEdit
-            ogImageFile={ogImageFile}
-            twitterImageFile={twitterImageFile}
-            ogImageUrl={ogImageUrl}
-            twitterImageUrl={twitterImageUrl}
-            existingOgImage={removedOgImage ? '' : (server?.og_image ?? '')}
-            existingTwitterImage={removedTwitterImage ? '' : (server?.twitter_image ?? '')}
-            onOgImageChange={(file) => {
-              setOgImageFile(file)
-              if (file) setRemovedOgImage(false)
-            }}
-            onTwitterImageChange={(file) => {
-              setTwitterImageFile(file)
-              if (file) setRemovedTwitterImage(false)
-            }}
-            onOgImageUrlChange={(url) => {
-              setOgImageUrl(url)
-              if (url.trim()) setRemovedOgImage(false)
-            }}
-            onTwitterImageUrlChange={(url) => {
-              setTwitterImageUrl(url)
-              if (url.trim()) setRemovedTwitterImage(false)
-            }}
-            onExistingOgImageChange={() => {
-              setRemovedOgImage(true)
-              setOgImageFile(null)
-              setOgImageUrl('')
-            }}
-            onExistingTwitterImageChange={() => {
-              setRemovedTwitterImage(true)
-              setTwitterImageFile(null)
-              setTwitterImageUrl('')
-            }}
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">Homepage</h2>
+            <p className="product-form-section__hint">Announcement bar text and the banners at the top of the home page.</p>
+          </div>
+          <div className="global-settings-grid-2">
+            <FormField label="Header text first" htmlFor="header_text_first">
+              <input
+                id="header_text_first"
+                className="input"
+                value={form.header_text_first}
+                onChange={(e) => setField('header_text_first', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Header text second" htmlFor="header_text_second">
+              <input
+                id="header_text_second"
+                className="input"
+                value={form.header_text_second}
+                onChange={(e) => setField('header_text_second', e.target.value)}
+              />
+            </FormField>
+          </div>
+          <div className="form-row">
+            <ImageSourceField
+              label="Home page banner"
+              hint="Leave empty to keep the current image"
+              file={files.home_page_banner ?? null}
+              url={fileUrls.home_page_banner ?? ''}
+              existing={existingImage('home_page_banner')}
+              onFileChange={(file) => setFile('home_page_banner', file)}
+              onUrlChange={(url) => setFileUrl('home_page_banner', url)}
+              onExistingChange={() => clearExistingImage('home_page_banner')}
+            />
+            <ImageSourceField
+              label="Home page banner (mobile)"
+              hint="Leave empty to keep the current image"
+              file={files.home_page_banner_mobile ?? null}
+              url={fileUrls.home_page_banner_mobile ?? ''}
+              existing={existingImage('home_page_banner_mobile')}
+              onFileChange={(file) => setFile('home_page_banner_mobile', file)}
+              onUrlChange={(url) => setFileUrl('home_page_banner_mobile', url)}
+              onExistingChange={() => clearExistingImage('home_page_banner_mobile')}
+            />
+          </div>
+        </section>
+
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">Contact details</h2>
+          </div>
+          <div className="global-settings-grid-2">
+            <FormField label="Email" htmlFor="email">
+              <input
+                id="email"
+                type="email"
+                className="input"
+                value={form.email}
+                onChange={(e) => setField('email', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Phone" htmlFor="phone">
+              <input id="phone" className="input" value={form.phone} onChange={(e) => setField('phone', e.target.value)} />
+            </FormField>
+            <FormField label="WhatsApp number" htmlFor="whatsapp_number">
+              <input
+                id="whatsapp_number"
+                className="input"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="+971 50 000 0000"
+                value={form.whatsapp_number}
+                onChange={(e) => setField('whatsapp_number', e.target.value)}
+              />
+            </FormField>
+          </div>
+          <FormField label="Address" htmlFor="address">
+            <textarea
+              id="address"
+              className="textarea"
+              rows={2}
+              value={form.address}
+              onChange={(e) => setField('address', e.target.value)}
+            />
+          </FormField>
+        </section>
+
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">Analytics &amp; tags</h2>
+          </div>
+          <div className="global-settings-grid-2">
+            <FormField label="Google Analytics ID" htmlFor="google_analytics_id">
+              <input
+                id="google_analytics_id"
+                className="input"
+                placeholder="G-XXXXXXX"
+                value={form.google_analytics_id}
+                onChange={(e) => setField('google_analytics_id', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Google Tag Manager" htmlFor="google_tag_manager">
+              <input
+                id="google_tag_manager"
+                className="input"
+                placeholder="GTM-XXXXXX"
+                value={form.google_tag_manager}
+                onChange={(e) => setField('google_tag_manager', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Meta Pixel" htmlFor="meta_pixel">
+              <input
+                id="meta_pixel"
+                className="input"
+                placeholder="123456789012345"
+                value={form.meta_pixel}
+                onChange={(e) => setField('meta_pixel', e.target.value)}
+              />
+            </FormField>
+
+            <FormField label="Meta Pixel Access Token" htmlFor="meta_pixel_access_token">
+              <input
+                id="meta_pixel_access_token"
+                type="password"
+                className="input"
+                placeholder="Enter Meta Conversion API access token"
+                autoComplete="new-password"
+                value={form.meta_pixel_access_token}
+                onChange={(e) =>
+                  setField('meta_pixel_access_token', e.target.value)
+                }
+              />
+            </FormField>
+
+            <FormField label="Meta domain verification" htmlFor="meta_domain_verification">
+              <input
+                id="meta_domain_verification"
+                className="input"
+                placeholder="verification code"
+                value={form.meta_domain_verification}
+                onChange={(e) => setField('meta_domain_verification', e.target.value)}
+              />
+            </FormField>
+            <FormField label="TikTok Pixel" htmlFor="tiktok_pixel">
+              <input
+                id="tiktok_pixel"
+                className="input"
+                placeholder="CXXXXXXXXXXXXXXX"
+                value={form.tiktok_pixel}
+                onChange={(e) => setField('tiktok_pixel', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Snap Pixel" htmlFor="snap_pixel">
+              <input
+                id="snap_pixel"
+                className="input"
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                value={form.snap_pixel}
+                onChange={(e) => setField('snap_pixel', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Microsoft Clarity" htmlFor="microsoft_clarity">
+              <input
+                id="microsoft_clarity"
+                className="input"
+                value={form.microsoft_clarity}
+                onChange={(e) => setField('microsoft_clarity', e.target.value)}
+              />
+            </FormField>
+          </div>
+        </section>
+
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">Social links</h2>
+          </div>
+          <div className="global-settings-grid-3">
+            <FormField label="Instagram" htmlFor="instagram_link">
+              <input
+                id="instagram_link"
+                type="url"
+                className="input"
+                value={form.instagram_link}
+                onChange={(e) => setField('instagram_link', e.target.value)}
+              />
+            </FormField>
+            <FormField label="X (Twitter)" htmlFor="x_link">
+              <input
+                id="x_link"
+                type="url"
+                className="input"
+                value={form.x_link}
+                onChange={(e) => setField('x_link', e.target.value)}
+              />
+            </FormField>
+            <FormField label="LinkedIn" htmlFor="linkdin_link">
+              <input
+                id="linkdin_link"
+                type="url"
+                className="input"
+                value={form.linkdin_link}
+                onChange={(e) => setField('linkdin_link', e.target.value)}
+              />
+            </FormField>
+            <FormField label="YouTube" htmlFor="youtube_link">
+              <input
+                id="youtube_link"
+                type="url"
+                className="input"
+                value={form.youtube_link}
+                onChange={(e) => setField('youtube_link', e.target.value)}
+              />
+            </FormField>
+            <FormField label="Facebook" htmlFor="facebook_link">
+              <input
+                id="facebook_link"
+                type="url"
+                className="input"
+                value={form.facebook_link}
+                onChange={(e) => setField('facebook_link', e.target.value)}
+              />
+            </FormField>
+            <FormField label="TikTok" htmlFor="tiktok_link">
+              <input
+                id="tiktok_link"
+                type="url"
+                className="input"
+                value={form.tiktok_link}
+                onChange={(e) => setField('tiktok_link', e.target.value)}
+              />
+            </FormField>
+          </div>
+        </section>
+
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">
+              <label htmlFor="tax">Tax(%)</label>
+            </h2>
+          </div>
+          <input
+            id="tax"
+            type="number"
+            min="0"
+            step="0.01"
+            className="input tax-input"
+            placeholder="0"
+            aria-label="Tax"
+            value={form.tax}
+            onChange={(e) => setField('tax', e.target.value)}
           />
+        </section>
 
-          <section className="product-form-section">
-            <div className="product-form-section__head">
-              <h2 className="product-form-section__title">Buy 2 Get 1 Free</h2>
-              <p className="product-form-section__hint">
-                When this is on, every third eligible unit in the cart is free. The cheapest units are chosen first.
+        <SearchAndSocialCard
+          values={{
+            meta_title: form.meta_title,
+            meta_description: form.meta_description,
+            meta_keywords: form.meta_keywords,
+            og_title: form.og_title,
+            og_description: form.og_description,
+            twitter_title: form.twitter_title,
+            twitter_description: form.twitter_description,
+            json_ld: form.schema_markup,
+          }}
+          onChange={(key, value) => setField(key === 'json_ld' ? 'schema_markup' : key, value)}
+          isEdit
+          ogImageFile={ogImageFile}
+          twitterImageFile={twitterImageFile}
+          ogImageUrl={ogImageUrl}
+          twitterImageUrl={twitterImageUrl}
+          existingOgImage={removedOgImage ? '' : (server?.og_image ?? '')}
+          existingTwitterImage={removedTwitterImage ? '' : (server?.twitter_image ?? '')}
+          onOgImageChange={(file) => {
+            setOgImageFile(file)
+            if (file) setRemovedOgImage(false)
+          }}
+          onTwitterImageChange={(file) => {
+            setTwitterImageFile(file)
+            if (file) setRemovedTwitterImage(false)
+          }}
+          onOgImageUrlChange={(url) => {
+            setOgImageUrl(url)
+            if (url.trim()) setRemovedOgImage(false)
+          }}
+          onTwitterImageUrlChange={(url) => {
+            setTwitterImageUrl(url)
+            if (url.trim()) setRemovedTwitterImage(false)
+          }}
+          onExistingOgImageChange={() => {
+            setRemovedOgImage(true)
+            setOgImageFile(null)
+            setOgImageUrl('')
+          }}
+          onExistingTwitterImageChange={() => {
+            setRemovedTwitterImage(true)
+            setTwitterImageFile(null)
+            setTwitterImageUrl('')
+          }}
+        />
+
+        <section className="product-form-section">
+          <div className="product-form-section__head">
+            <h2 className="product-form-section__title">Buy 2 Get 1 Free</h2>
+            <p className="product-form-section__hint">
+              When this is on, every third eligible unit in the cart is free. The cheapest units are chosen first.
+            </p>
+          </div>
+          <div className="payment-gateway-row">
+            <div>
+              <p className="payment-gateway-row__name">Enable offer</p>
+              <p className="payment-gateway-row__note">
+                Off means the cart and checkout do not give a free unit.
               </p>
             </div>
-            <div className="payment-gateway-row">
-              <div>
-                <p className="payment-gateway-row__name">Enable offer</p>
-                <p className="payment-gateway-row__note">
-                  Off means the cart and checkout do not give a free unit.
-                </p>
-              </div>
-              <label className="toggle-switch" htmlFor="enable_bogo">
-                <input
-                  id="enable_bogo"
-                  type="checkbox"
-                  checked={enableBogo}
-                  disabled={!canEdit}
-                  aria-label={`${enableBogo ? 'Turn off' : 'Turn on'} Buy 2 Get 1 Free`}
-                  onChange={(event) => setEnableBogo(event.target.checked)}
-                />
-                <span className="toggle-switch-track" aria-hidden>
-                  <span className="toggle-switch-thumb" />
-                </span>
-              </label>
-            </div>
-          </section>
-
-          <div className="product-form-actions">
-            <SettingsActions saving={saving} onReload={reload} canSave={canEdit} />
+            <label className="toggle-switch" htmlFor="enable_bogo">
+              <input
+                id="enable_bogo"
+                type="checkbox"
+                checked={enableBogo}
+                disabled={!canEdit}
+                aria-label={`${enableBogo ? 'Turn off' : 'Turn on'} Buy 2 Get 1 Free`}
+                onChange={(event) => setEnableBogo(event.target.checked)}
+              />
+              <span className="toggle-switch-track" aria-hidden>
+                <span className="toggle-switch-thumb" />
+              </span>
+            </label>
           </div>
+        </section>
+
+        <div className="product-form-actions">
+          <SettingsActions saving={saving} onReload={reload} canSave={canEdit} />
         </div>
+      </div>
     </form>
   )
 }
