@@ -8,10 +8,10 @@ const SALES_METRICS: Array<{ key: DashboardSalesKey; label: string; info?: strin
   { key: 'gross_sales', label: 'Gross sales' },
   { key: 'returns', label: 'Returns' },
   { key: 'coupons', label: 'Coupons' },
-  { key: 'net_sales', label: 'Net sales', info: 'Gross sales minus returns and coupons.' },
-  { key: 'taxes', label: 'Taxes', info: 'Tax collected on orders in this period.' },
+  { key: 'net_sales', label: 'Net sales', info: 'Full refunds are not deducted from tax or net sales totals' },
+  { key: 'taxes', label: 'Taxes', info: 'Full refunds are not deducted from tax or net sales totals' },
   { key: 'shipping', label: 'Shipping' },
-  { key: 'total_sales', label: 'Total sales', info: 'Net sales plus taxes, shipping, fees and cash on delivery.' },
+  { key: 'total_sales', label: 'Total sales', },
 ]
 
 function Delta({ metric }: { metric?: DashboardMetric }) {
@@ -67,8 +67,17 @@ export function SalesSummaryPanel({ fromDate, toDate, paused }: ReportPanelProps
               <p className="dashboard-sales__label">
                 {metric.label}
                 {metric.info ? (
-                  <span className="dashboard-sales__info" title={metric.info} aria-label={metric.info}>
-                    <Info size={14} aria-hidden />
+                  <span className="dashboard-sales__info-wrapper">
+                    <span
+                      className="dashboard-sales__info"
+                      tabIndex={0}
+                      aria-label={metric.info}
+                    >
+                      <Info size={14} aria-hidden />
+                    </span>
+                    <span className="dashboard-sales__tooltip" role="tooltip">
+                      {metric.info}
+                    </span>
                   </span>
                 ) : null}
               </p>

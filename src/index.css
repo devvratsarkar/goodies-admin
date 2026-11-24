@@ -10545,3 +10545,68 @@ html.dark .product-filter-bar {
     max-width: 128px;
   }
 }
+
+/* Tooltip wrapper */
+.dashboard-sales__info-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  z-index: 1;
+}
+
+/* Info icon */
+.dashboard-sales__info {
+  display: inline-flex;
+  align-items: center;
+  color: #8b8b8b;
+  cursor: help;
+}
+
+/* Tooltip */
+.dashboard-sales__tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 60%;
+  transform: translateX(-40%);
+
+  width: max-content;
+  max-width: 200px;
+  padding: 8px 12px;
+
+  background: #222;
+  color: #fff;
+
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+
+  border-radius: 6px;
+  z-index: 9999;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+
+/* Show tooltip on hover */
+.dashboard-sales__info-wrapper:hover {
+  z-index: 9999;
+}
+
+.dashboard-sales__info-wrapper:hover .dashboard-sales__tooltip,
+.dashboard-sales__info-wrapper:focus-within .dashboard-sales__tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Allow tooltip overflow */
+.dashboard-sales,
+.dashboard-sales__grid,
+.dashboard-sales__cell {
+  overflow: visible;
+}
