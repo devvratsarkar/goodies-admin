@@ -393,15 +393,14 @@ type BundleTab = 'browse' | 'selected'
 function bundleProblemMessage(items: SelectedBundleItem[], onSelectedTab: boolean) {
   const problems = items.filter((item) => item.missing || item.missing_variant)
   if (problems.length === 0) return ''
+  const where = onSelectedTab ? 'Uncheck them below' : 'Go to Selected and uncheck them'
+  const names = problems.map((item) => item.title).join(', ')
   if (problems.length === 1) {
     const item = problems[0]
-    const place = onSelectedTab ? 'Uncheck it here before saving.' : 'Uncheck it on the Selected tab before saving.'
-    if (item.missing) return `${item.title} is unavailable. ${place}`
-    return `The selected variant for ${item.title} is no longer available. ${place} Then add the product again.`
+    if (item.missing) return `${item.title} was deleted. ${where} before saving.`
+    return `${item.title} has a removed size/color. ${where} before saving.`
   }
-  return onSelectedTab
-    ? `${problems.length} products in this bundle are unavailable. Uncheck them here before saving.`
-    : `${problems.length} products in this bundle are unavailable. Open the Selected tab and uncheck them before saving.`
+  return `${problems.length} selected products were deleted or changed (${names}). ${where} before saving.`
 }
 
 function BundleSelectBox({
