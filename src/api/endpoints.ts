@@ -138,6 +138,14 @@ export const customersApi = {
         ...(params?.search ? { search: params.search } : {}),
       },
     }),
+  getTrash: (params?: { search?: string }) =>
+    api.get<ApiResponse<CustomerUser[] | { data?: CustomerUser[] }>>('/customers/trash', {
+      params: {
+        page: 1,
+        limit: 500,
+        ...(params?.search ? { search: params.search } : {}),
+      },
+    }),
   create: (data: FormData | {
     name: string
     email: string
@@ -165,6 +173,7 @@ export const customersApi = {
     },
   ) => api.put<ApiResponse<CustomerUser>>(`/customers/${id}`, data),
   delete: (id: string) => api.delete(`/customers/${id}`),
+  restore: (id: string) => api.patch<ApiResponse<unknown>>(`/customers/${id}/restore`),
   sendPasswordReset: (id: string) => api.post<ApiResponse<unknown>>(`/customers/${id}/password-reset`),
 }
 
