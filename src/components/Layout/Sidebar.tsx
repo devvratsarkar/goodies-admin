@@ -65,7 +65,7 @@ const navSections: {
     title: 'Overview',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard', module: 'dashboard' },
-      { to: '/analytics', icon: LineChart, label: 'Analytics', module: 'analytics' },
+      { to: '/analytics', icon: LineChart, label: 'Google Analytics', module: 'analytics' },
     ],
   },
   {
