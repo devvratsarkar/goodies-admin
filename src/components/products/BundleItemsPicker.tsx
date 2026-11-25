@@ -1178,7 +1178,7 @@ export function BundleItemsPicker({
               className="input"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Name or SKU"
+              placeholder="Name, SKU, or ID"
             />
           </FormField>
           <FormField label="Min price">
