@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Pencil } from 'lucide-react'
+import { Eye, EyeOff, Pencil } from 'lucide-react'
 import { accessApi } from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
 import { useRbac } from '../context/RbacContext'
@@ -52,6 +52,8 @@ export function Roles() {
   const [userName, setUserName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showEditPassword, setShowEditPassword] = useState(false)
   const [userRoleId, setUserRoleId] = useState('')
   const [userError, setUserError] = useState('')
   const [savingUser, setSavingUser] = useState(false)
@@ -243,6 +245,7 @@ export function Roles() {
       setUserName('')
       setEmail('')
       setPassword('')
+      setShowPassword(false)
       flash('User added')
     } catch (err) {
       setUserError(apiMessage(err, 'Failed to add user'))
@@ -295,6 +298,7 @@ export function Roles() {
   const closeEditUser = () => {
     if (savingEdit) return
     setEditingUser(null)
+    setShowEditPassword(false)
   }
 
   const saveUser = async (event: FormEvent) => {
@@ -547,14 +551,25 @@ export function Roles() {
             </label>
             <label className="rbac-field">
               <span>Password</span>
-              <input
-                className="input"
-                type="password"
-                value={password}
-                placeholder={PASSWORD_HINT}
-                autoComplete="new-password"
-                onChange={(event) => setPassword(event.target.value)}
-              />
+              <div className="password-input-wrap">
+                <input
+                  className="input password-input"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  placeholder={PASSWORD_HINT}
+                  autoComplete="new-password"
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
+              </div>
             </label>
             <label className="rbac-field">
               <span>Role</span>
@@ -659,14 +674,25 @@ export function Roles() {
               <input id="staff-email" className="input" type="email" value={editEmail} onChange={(event) => setEditEmail(event.target.value)} />
             </FormField>
             <FormField label="Password" htmlFor="staff-password" hint={`Leave blank to keep the current password. ${PASSWORD_HINT}`}>
-              <input
-                id="staff-password"
-                className="input"
-                type="password"
-                value={editPassword}
-                autoComplete="new-password"
-                onChange={(event) => setEditPassword(event.target.value)}
-              />
+              <div className="password-input-wrap">
+                <input
+                  id="staff-password"
+                  className="input password-input"
+                  type={showEditPassword ? 'text' : 'password'}
+                  value={editPassword}
+                  autoComplete="new-password"
+                  onChange={(event) => setEditPassword(event.target.value)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowEditPassword((prev) => !prev)}
+                  aria-label={showEditPassword ? 'Hide password' : 'Show password'}
+                  title={showEditPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showEditPassword ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
+              </div>
             </FormField>
             <FormField label="Role" htmlFor="staff-role" required>
               <select id="staff-role" className="select" value={editRoleId} onChange={(event) => setEditRoleId(event.target.value)}>

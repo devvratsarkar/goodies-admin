@@ -123,12 +123,18 @@ a:hover {
   transform: scale(0.98);
 }
 
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn-primary {
   background: var(--accent);
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
   color: white;
 }
@@ -431,6 +437,15 @@ html.dark .btn:has(> svg.lucide-trash-2):not(.btn-icon):not(.btn-danger):hover {
   outline: none;
   border-color: var(--accent);
   /* box-shadow: 0 0 0 3px var(--accent-muted); */
+}
+
+.input:disabled,
+.textarea:disabled,
+.select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background: var(--bg-hover);
+  color: var(--text-muted);
 }
 
 .input.is-invalid,
@@ -5122,6 +5137,23 @@ html.dark .alert-warning {
 
 .toggle-switch input:checked + .toggle-switch-track {
   background: var(--accent, #3b82f6);
+}
+
+.toggle-switch:has(input:disabled),
+.toggle-switch.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.toggle-switch input:disabled + .toggle-switch-track,
+.toggle-switch.is-disabled .toggle-switch-track {
+  background: var(--border);
+}
+
+.toggle-switch input:disabled:checked + .toggle-switch-track,
+.toggle-switch.is-disabled input:checked + .toggle-switch-track {
+  background: color-mix(in srgb, var(--accent, #3b82f6) 45%, var(--border));
 }
 
 .toggle-switch-thumb {
@@ -10373,7 +10405,8 @@ html.dark .product-filter-bar {
 }
 
 .rbac-matrix-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: min(70vh, calc(100dvh - 260px));
 }
 
 .rbac-matrix {
@@ -10393,11 +10426,16 @@ html.dark .product-filter-bar {
 }
 
 .rbac-matrix thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-card);
   color: var(--text-dim);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  box-shadow: 0 1px 0 var(--border);
 }
 
 .rbac-matrix tbody tr:not(.rbac-matrix-group):hover td {

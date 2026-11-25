@@ -182,12 +182,12 @@ export function SmtpSettings() {
                 Turn this on to send store emails through this mail server. Leave it off to keep the current mail setup.
               </p>
             </div>
-            <label className="toggle-switch" htmlFor="smtp-status">
+            <label className={`toggle-switch${saving || !canEdit ? ' is-disabled' : ''}`} htmlFor="smtp-status">
               <input
                 id="smtp-status"
                 type="checkbox"
                 checked={form.status}
-                disabled={saving}
+                disabled={saving || !canEdit}
                 aria-label={`${form.status ? 'Turn off' : 'Turn on'} SMTP`}
                 onChange={(event) => setField('status', event.target.checked)}
               />
@@ -204,7 +204,7 @@ export function SmtpSettings() {
               id="smtp-host"
               className="input"
               value={form.host}
-              disabled={saving}
+              disabled={saving || !canEdit}
               placeholder="smtp.example.com"
               onChange={(event) => setField('host', event.target.value)}
             />
@@ -215,7 +215,7 @@ export function SmtpSettings() {
               className="input"
               inputMode="numeric"
               value={form.port}
-              disabled={saving}
+              disabled={saving || !canEdit}
               onChange={(event) => setField('port', event.target.value)}
             />
           </FormField>
@@ -225,7 +225,7 @@ export function SmtpSettings() {
               className="input"
               autoComplete="off"
               value={form.username}
-              disabled={saving}
+              disabled={saving || !canEdit}
               onChange={(event) => setField('username', event.target.value)}
             />
           </FormField>
@@ -247,7 +247,7 @@ export function SmtpSettings() {
               autoComplete="new-password"
               name="password"
               value={form.password}
-              disabled={saving}
+              disabled={saving || !canEdit}
               onChange={(event) => {
                 const next = event.target.value
                 setField('password', next)
@@ -265,7 +265,7 @@ export function SmtpSettings() {
               id="smtp-from-name"
               className="input"
               value={form.from_name}
-              disabled={saving}
+              disabled={saving || !canEdit}
               placeholder="Goodies"
               onChange={(event) => setField('from_name', event.target.value)}
             />
@@ -276,7 +276,7 @@ export function SmtpSettings() {
               className="input"
               type="email"
               value={form.from_email}
-              disabled={saving}
+              disabled={saving || !canEdit}
               placeholder="orders@example.com"
               onChange={(event) => setField('from_email', event.target.value)}
             />
@@ -289,7 +289,7 @@ export function SmtpSettings() {
               id="smtp-secure"
               type="checkbox"
               checked={form.secure}
-              disabled={saving}
+              disabled={saving || !canEdit}
               onChange={(event) => setField('secure', event.target.checked)}
             />
             Use a secure connection
