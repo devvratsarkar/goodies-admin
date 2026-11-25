@@ -65,7 +65,7 @@ function SwitchRow({
         <p className="payment-gateway-row__name">{name}</p>
         <p className="payment-gateway-row__note">{note}</p>
       </div>
-      <label className="toggle-switch" htmlFor={id}>
+      <label className={`toggle-switch${disabled ? ' is-disabled' : ''}`} htmlFor={id}>
         <input
           id={id}
           type="checkbox"
@@ -202,7 +202,7 @@ export function PaymentSettings() {
                   id="default-payment-method"
                   className="select"
                   value={draft.default_payment_method}
-                  disabled={saving || !settings}
+                  disabled={saving || !settings || !canEdit}
                   onChange={(event) => setDefaultMethod(event.target.value)}
                 >
                   {DEFAULT_METHODS.map((method) => (
@@ -225,7 +225,7 @@ export function PaymentSettings() {
                 name={gateway.name}
                 note={gateway.note}
                 checked={draft[gateway.key]}
-                disabled={saving || !settings}
+                disabled={saving || !settings || !canEdit}
                 onChange={(checked) => toggle(gateway.key, checked)}
               />
             ))}
