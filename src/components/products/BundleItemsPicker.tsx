@@ -515,6 +515,7 @@ export function BundleItemsPicker({
   const [pageSize, setPageSize] = useState(50)
   const [selectedPage, setSelectedPage] = useState(0)
   const [selectedPageSize, setSelectedPageSize] = useState(50)
+  const [selectedSearch, setSelectedSearch] = useState('')
   const [tab, setTab] = useState<BundleTab>('browse')
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -526,6 +527,14 @@ export function BundleItemsPicker({
 
   const selectedIds = useMemo(() => new Set(items.map((item) => item.product_id)), [items])
   const problemMessage = bundleProblemMessage(items, tab === 'selected')
+  const filteredSelectedItems = useMemo(() => {
+    const q = selectedSearch.trim().toLowerCase()
+    if (!q) return items
+    return items.filter((item) => {
+      const haystack = [item.title, item.sku, item.id, item.product_id].join(' ').toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [items, selectedSearch])
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 350)
@@ -761,7 +770,10 @@ export function BundleItemsPicker({
     if (next.length !== current.length) commitItems(next)
   }
 
-  const selectedPageRows = items.slice(selectedPage * selectedPageSize, (selectedPage + 1) * selectedPageSize)
+  const selectedPageRows = filteredSelectedItems.slice(
+    selectedPage * selectedPageSize,
+    (selectedPage + 1) * selectedPageSize,
+  )
   const toggleSelectedPage = (checked: boolean) => {
     if (checked || selectedPageRows.length === 0) return
     removeItems(new Set(selectedPageRows.map((item) => item.product_id)))
@@ -1150,23 +1162,42 @@ export function BundleItemsPicker({
             {items.length === 0 ? (
               <div className="bundle-builder__empty">No products in this bundle yet. Check products on the Find products tab.</div>
             ) : (
-              <div className="table-wrap">
-                <MuiDataTable
-                  rows={items}
-                  columns={selectedColumns}
-                  getRowId={(row) => String(row.product_id)}
-                  loading={false}
-                  paginationMode="client"
-                  paginationModel={{ page: selectedPage, pageSize: selectedPageSize }}
-                  onPaginationModelChange={(model) => {
-                    setSelectedPage(model.pageSize === selectedPageSize ? model.page : 0)
-                    setSelectedPageSize(model.pageSize)
-                  }}
-                  pageSizeOptions={[10, 25, 50, 100, 200, 300]}
-                  density="compact"
-                  bodyScroll
-                />
-              </div>
+              <>
+                <div className="bundle-builder__filters">
+                  <FormField label="Search">
+                    <input
+                      className="input"
+                      value={selectedSearch}
+                      onChange={(e) => {
+                        setSelectedSearch(e.target.value)
+                        setSelectedPage(0)
+                      }}
+                      placeholder="Name, SKU, or ID"
+                    />
+                  </FormField>
+                </div>
+                {filteredSelectedItems.length === 0 ? (
+                  <div className="bundle-builder__empty">No selected products match this search.</div>
+                ) : (
+                  <div className="table-wrap">
+                    <MuiDataTable
+                      rows={filteredSelectedItems}
+                      columns={selectedColumns}
+                      getRowId={(row) => String(row.product_id)}
+                      loading={false}
+                      paginationMode="client"
+                      paginationModel={{ page: selectedPage, pageSize: selectedPageSize }}
+                      onPaginationModelChange={(model) => {
+                        setSelectedPage(model.pageSize === selectedPageSize ? model.page : 0)
+                        setSelectedPageSize(model.pageSize)
+                      }}
+                      pageSizeOptions={[10, 25, 50, 100, 200, 300]}
+                      density="compact"
+                      bodyScroll
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (
