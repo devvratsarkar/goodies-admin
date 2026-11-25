@@ -423,7 +423,7 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
         minWidth: 200,
         valueGetter: (_, row) => row.description,
         renderCell: ({ row }) => (
-          <div className="product-cell" title={row.description}>
+          <div className="product-cell" title={row.description || undefined}>
             <div className="product-cell__text">
               <span className="product-cell__title">{row.description || '—'}</span>
             </div>
