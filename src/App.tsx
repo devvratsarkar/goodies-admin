@@ -92,6 +92,7 @@ function App() {
         <Route path="order-cancellations/:id" element={<OrderCancellationDetails />} />
         <Route path="contact-enquiries" element={<ContactEnquiries />} />
         <Route path="customers" element={<Customers />} />
+        <Route path="customers/trash" element={<Customers trash />} />
         <Route path="subscribers" element={<Subscribers />} />
         <Route path="profile" element={<Profile />} />
         <Route path="global-settings" element={<GlobalSettings />} />

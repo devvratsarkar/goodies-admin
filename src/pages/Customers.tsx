@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Check, Copy, Eye, EyeOff, FileSpreadsheet, ImageOff, KeyRound, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Check, Copy, Eye, EyeOff, FileSpreadsheet, ImageOff, KeyRound, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { authApi, customersApi } from '../api/endpoints'
 import { getProfileImageUrl } from '../api/client'
@@ -152,7 +152,7 @@ function CustomerThumb({ src, alt }: { src?: string | null; alt: string }) {
   return <img src={resolved} alt={alt} className="customer-avatar" onError={() => setFailed(true)} />
 }
 
-export function Customers() {
+export function Customers({ trash = false }: { trash?: boolean }) {
   const navigate = useNavigate()
   const { canCreate, canEdit, canDelete, canExport } = useModuleCan('customers')
   const [searchParams] = useSearchParams()
@@ -165,6 +165,7 @@ export function Customers() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [sendingResetId, setSendingResetId] = useState<string | null>(null)
+  const [restoringId, setRestoringId] = useState<string | null>(null)
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -186,14 +187,16 @@ export function Customers() {
   const load = (fromOverride = appliedFromDate, toOverride = appliedToDate, searchOverride = debouncedSearch) => {
     setLoading(true)
     setError('')
-    customersApi
-      .getAll({
-        fromDate: fromOverride || undefined,
-        toDate: toOverride || undefined,
-        search: searchOverride.trim() || undefined,
-      })
+    const request = trash
+      ? customersApi.getTrash({ search: searchOverride.trim() || undefined })
+      : customersApi.getAll({
+          fromDate: fromOverride || undefined,
+          toDate: toOverride || undefined,
+          search: searchOverride.trim() || undefined,
+        })
+    request
       .then((res) => setRows(toArray(res.data)))
-      .catch(() => setError('Failed to load customers'))
+      .catch(() => setError(trash ? 'Failed to load trashed customers' : 'Failed to load customers'))
       .finally(() => {
         setLoading(false)
         setInitialLoading(false)
@@ -203,7 +206,7 @@ export function Customers() {
   useEffect(() => {
     load(appliedFromDate, appliedToDate, debouncedSearch)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch])
+  }, [debouncedSearch, trash])
 
   const applyJoinDateFilter = () => {
     setAppliedFromDate(fromDate)
@@ -386,10 +389,27 @@ export function Customers() {
     try {
       setError('')
       await customersApi.delete(id)
-      setSuccess('Customer deleted')
+      setSuccess('Customer moved to trash')
       load()
     } catch (err) {
       setError(apiMessage(err, 'Failed to delete customer'))
+    }
+  }
+
+  const handleRestore = async (customer: CustomerUser) => {
+    if (!canEdit) return
+    const label = [customer.name, customer.last_name].filter(Boolean).join(' ') || customer.email || 'this customer'
+    if (!(await adminConfirm(`Are you sure you want to restore “${label}”?`))) return
+    setRestoringId(customer._id)
+    setError('')
+    try {
+      await customersApi.restore(customer._id)
+      setSuccess('Customer restored')
+      load()
+    } catch (err) {
+      setError(apiMessage(err, 'Failed to restore customer'))
+    } finally {
+      setRestoringId(null)
     }
   }
 
@@ -398,30 +418,47 @@ export function Customers() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div className="table-actions">
-          {canEdit && (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-icon action-icon--reset"
-            title="Send password reset"
-            aria-label="Send password reset"
-            disabled={sendingResetId === row.original._id}
-            onClick={() => handleSendReset(row.original)}
-          >
-            <KeyRound size={16} />
-          </button>
-          )}
-          {canEdit && (
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(row.original)}>
-            <Pencil size={16} />
-          </button>
-          )}
-          {canDelete && (
-          <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, [row.original.name, row.original.last_name].filter(Boolean).join(' ') || row.original.email)}>
-            <Trash2 size={16} />
-          </button>
-          )}
-        </div>
+        trash ? (
+          <div className="table-actions">
+            {canEdit && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-icon"
+                title="Restore customer"
+                aria-label="Restore customer"
+                disabled={restoringId === row.original._id}
+                onClick={() => handleRestore(row.original)}
+              >
+                <RotateCcw size={16} />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="table-actions">
+            {canEdit && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm btn-icon action-icon--reset"
+              title="Send password reset"
+              aria-label="Send password reset"
+              disabled={sendingResetId === row.original._id}
+              onClick={() => handleSendReset(row.original)}
+            >
+              <KeyRound size={16} />
+            </button>
+            )}
+            {canEdit && (
+            <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(row.original)}>
+              <Pencil size={16} />
+            </button>
+            )}
+            {canDelete && (
+            <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(row.original._id, [row.original.name, row.original.last_name].filter(Boolean).join(' ') || row.original.email)}>
+              <Trash2 size={16} />
+            </button>
+            )}
+          </div>
+        )
       ),
     },
     { header: '#', id: 'rowNum', cell: ({ row }) => row.index + 1 },
@@ -545,19 +582,37 @@ export function Customers() {
     <>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Customers</h1>
-          <p className="page-subtitle">Add, update and delete customer accounts.</p>
+          <h1 className="page-title">{trash ? 'Customer trash' : 'Customers'}</h1>
+          <p className="page-subtitle">
+            {trash
+              ? 'Soft-deleted customers. Restore one to put it back in the list.'
+              : 'Add, update and delete customer accounts.'}
+          </p>
         </div>
-        {canCreate && (
-        <button type="button" className="btn btn-primary" onClick={openCreate}>
-          <Plus size={18} /> Add Customer
-        </button>
-        )}
+        {trash ? (
+          <button type="button" className="btn" onClick={() => navigate('/customers')}>
+            Back to customers
+          </button>
+        ) : (canDelete || canCreate) ? (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {canDelete && (
+              <button type="button" className="btn" onClick={() => navigate('/customers/trash')}>
+                <Trash2 size={18} /> Trash
+              </button>
+            )}
+            {canCreate && (
+              <button type="button" className="btn btn-primary" onClick={openCreate}>
+                <Plus size={18} /> Add Customer
+              </button>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
 
+      {!trash && (
       <div className="card" style={{ padding: 14, marginBottom: 12 }}>
         <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', alignItems: 'end' }}>
           <div>
@@ -591,16 +646,17 @@ export function Customers() {
           </div>
         </div>
       </div>
+      )}
 
       <DataTable
-        data={filteredRows}
+        data={trash ? rows : filteredRows}
         columns={columns}
         pageSize={50}
         pageSizeOptions={[50, 100, 200, 500]}
         searchPlaceholder="Search customers..."
         serverSearch={{ value: search, onChange: setSearch }}
-        summary={(list) => <CustomerSummary rows={list} />}
-        headerRight={canExport ? (
+        summary={trash ? undefined : (list) => <CustomerSummary rows={list} />}
+        headerRight={!trash && canExport ? (
           <button type="button" className="btn btn-primary btn-sm" onClick={handleExport} disabled={exporting}>
             <FileSpreadsheet size={16} />
             {exporting ? 'Exporting...' : 'Export Excel'}
@@ -608,7 +664,7 @@ export function Customers() {
         ) : undefined}
       />
 
-      {modal && (
+      {!trash && modal && (
         <Modal title={modal === 'create' ? 'Add Customer' : 'Update Customer'} onClose={closeModal}>
           <form onSubmit={modal === 'create' ? handleCreate : handleUpdate}>
             <FormField label="Name" required>
