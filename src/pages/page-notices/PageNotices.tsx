@@ -162,10 +162,11 @@ export function PageNotices() {
                   </label>
                   {/* <p className="form-field-hint">{notice.hint}</p> */}
                 </div>
-                <label className="toggle-switch">
+                <label className={`toggle-switch${!canEdit || saving ? ' is-disabled' : ''}`}>
                   <input
                     type="checkbox"
                     checked={form.enabled[notice.enabledKey]}
+                    disabled={saving || !canEdit}
                     aria-label={`Show the ${notice.label} notice`}
                     onChange={(event) =>
                       setForm((current) => ({
@@ -184,6 +185,7 @@ export function PageNotices() {
                 className="input"
                 type="text"
                 value={form.messages[notice.key]}
+                disabled={saving || !canEdit}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
