@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid'
 import Tooltip from '@mui/material/Tooltip'
-import { Pencil, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react'
+import { Eye, Pencil, Plus, RotateCcw, Search, Trash2, X } from 'lucide-react'
 import moment from 'moment'
 import { useNavigate } from 'react-router-dom'
 import { blogCategoriesApi } from '../api/endpoints'
@@ -23,6 +23,7 @@ type StatusFilter = 'all' | 'active' | 'inactive'
 type FormState = {
   name: string
   slug: string
+  description: string
   status: boolean
   canonical_url: string
   meta_title: string
@@ -39,6 +40,7 @@ type FormState = {
 const initialForm: FormState = {
   name: '',
   slug: '',
+  description: '',
   status: true,
   canonical_url: '',
   meta_title: '',
@@ -62,6 +64,11 @@ function formatDateLabel(value?: string | null) {
   if (!value) return null
   const date = moment(value)
   return date.isValid() ? date.format('D MMM YYYY, h:mm A') : null
+}
+
+function detailValue(value?: string | null) {
+  const text = String(value ?? '').trim()
+  return text || '—'
 }
 
 function parseBlogCategoryList(payload: unknown): BlogCategory[] {
@@ -93,6 +100,7 @@ const formDataFrom = (
   const data = new FormData()
   data.append('name', form.name)
   data.append('slug', form.slug)
+  data.append('description', form.description)
   data.append('status', String(form.status))
   data.append('canonical_url', form.canonical_url)
   data.append('meta_title', form.meta_title)
@@ -119,6 +127,7 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
+  const [viewCategory, setViewCategory] = useState<BlogCategory | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState<FormState>(initialForm)
@@ -184,6 +193,7 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
     setForm({
       name: row.name,
       slug: row.slug,
+      description: row.description ?? '',
       status: Boolean(row.status),
       canonical_url: row.canonical_url ?? '',
       meta_title: row.meta_title ?? '',
@@ -331,8 +341,8 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
       {
         field: 'actions',
         headerName: 'Actions',
-        width: trash ? 72 : 96,
-        minWidth: trash ? 72 : 96,
+        width: trash ? 72 : 128,
+        minWidth: trash ? 72 : 128,
         sortable: false,
         filterable: false,
         disableColumnMenu: true,
@@ -357,6 +367,15 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
             </div>
           ) : (
             <div className="table-actions" onClick={(event) => event.stopPropagation()}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm btn-icon action-icon action-icon--view"
+                title="View blog category"
+                aria-label="View blog category"
+                onClick={() => setViewCategory(row)}
+              >
+                <Eye size={16} />
+              </button>
               {canEdit && (
               <button
                 type="button"
@@ -396,6 +415,25 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
           </div>
         ),
       },
+
+      {
+        field: 'description',
+        headerName: 'Description',
+        flex: 1.6,
+        minWidth: 200,
+        valueGetter: (_, row) => row.description,
+        renderCell: ({ row }) => (
+          <div className="product-cell" title={row.description}>
+            <div className="product-cell__text">
+              <span className="product-cell__title">{row.description || '—'}</span>
+            </div>
+          </div>
+        ),
+      },
+
+
+
+
       ...(trash
         ? []
         : ([
@@ -468,6 +506,24 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
     ],
     [canDelete, canEdit, handleDelete, handleRestore, openEdit, restoringId, toggleStatus, togglingId, trash],
   )
+
+  const viewRows = viewCategory
+    ? [
+        { label: 'Name', value: detailValue(viewCategory.name) },
+        { label: 'Slug', value: detailValue(viewCategory.slug) },
+        { label: 'Status', value: viewCategory.status ? 'Active' : 'Inactive' },
+        { label: 'Description', value: detailValue(viewCategory.description), wide: true },
+        { label: 'Meta title', value: detailValue(viewCategory.meta_title) },
+        { label: 'Meta description', value: detailValue(viewCategory.meta_description), wide: true },
+        { label: 'Meta keywords', value: detailValue(viewCategory.meta_keywords) },
+        { label: 'OG title', value: detailValue(viewCategory.og_title) },
+        { label: 'OG description', value: detailValue(viewCategory.og_description), wide: true },
+        { label: 'Twitter title', value: detailValue(viewCategory.twitter_title) },
+        { label: 'Twitter description', value: detailValue(viewCategory.twitter_description), wide: true },
+        { label: 'Created', value: formatDateLabel(viewCategory.createdAt) || '—' },
+        { label: 'Updated', value: formatDateLabel(viewCategory.updatedAt) || '—' },
+      ]
+    : []
 
   return (
     <>
@@ -557,6 +613,39 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
         </div>
       </div>
 
+      {viewCategory && (
+        <Modal title="Blog category details" onClose={() => setViewCategory(null)}>
+          <div className="order-info-card-body order-info-card-body-grid" style={{ padding: 0 }}>
+            {viewRows.map((row) => (
+              <div key={row.label} className={`order-field${row.wide ? ' order-field--wide' : ''}`}>
+                <span className="order-field-label">{row.label}</span>
+                <span className="order-field-value" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                  {row.value}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="modal-footer">
+            {canEdit && !trash ? (
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const row = viewCategory
+                  setViewCategory(null)
+                  openEdit(row)
+                }}
+              >
+                Edit
+              </button>
+            ) : null}
+            <button type="button" className="btn btn-ghost" onClick={() => setViewCategory(null)}>
+              Close
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {!trash && modal && (
         <Modal wide title={modal === 'create' ? 'Create Blog Category' : 'Update Blog Category'} onClose={closeModal}>
           <form noValidate className="modal-form" onSubmit={saveCategory}>
@@ -600,6 +689,16 @@ export function BlogCategories({ trash = false }: { trash?: boolean }) {
                   setForm((current) => ({ ...current, slug }))
                 }}
                 onBlur={() => setForm((current) => ({ ...current, slug: slugify(current.slug) }))}
+              />
+            </FormField>
+            <FormField label="Description" htmlFor="blog-category-description" hint="Optional. Shown with this category on the store.">
+              <textarea
+                id="blog-category-description"
+                className="input"
+                rows={4}
+                value={form.description}
+                onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
+                placeholder="Write a short description for this blog category…"
               />
             </FormField>
             <label className="categories-toggle-card">

@@ -419,6 +419,7 @@ export interface BlogCategory {
   _id: string
   name: string
   slug: string
+  description?: string | null
   status?: boolean
   canonical_url?: string | null
   meta_title?: string | null
